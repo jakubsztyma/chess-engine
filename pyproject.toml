@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "chess-env"
+version = "0.1.0"
+description = ""
+authors = ["Jakub Sztyma <jakub.sztyma@revolut.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-chess = "^1.999"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
