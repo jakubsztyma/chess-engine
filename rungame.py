@@ -26,18 +26,26 @@ class Game:
                 side = "Black"
                 engine = self.black
 
-            # FIXME copy the board
-            result = engine.play(board, chess.engine.Limit(time=0.1))  # 0.1 seconds for move
+            result = engine.play(board.copy(), chess.engine.Limit(time=0.1))  # 0.1 seconds for move
             # print(f"{board.fullmove_number} {side}: {result.move}")
             board.push(result.move)
-            if board.is_checkmate(): # TODO more generic
+            if board.is_game_over():
                 break
 
-        print(board.result())
 
         # Close the engine when done
         self.white.quit()
         self.black.quit()
+
+        result = board.result()
+        match result:
+            case "1-0":
+                return 1
+            case "0-1":
+                return 0
+            case _:
+                return 0.5
+
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -46,5 +54,11 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    for i in range(50):
-        Game(MinMaxEngine(), RandomEngine()).play()
+    GAMES_COUNT = 50
+    white_result = 0
+    for i in range(GAMES_COUNT):
+        game_result = Game(MinMaxEngine(), RandomEngine()).play()
+        print(game_result)
+        white_result += game_result
+
+    print(f"Match result: {white_result} : {GAMES_COUNT - white_result}")
