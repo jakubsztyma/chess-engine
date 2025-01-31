@@ -2,7 +2,7 @@ import abc
 import math
 import random
 
-from chess import Board
+from chess import Board, SQUARES_180, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING, WHITE, BB_SQUARES
 from chess.engine import PlayResult
 
 class BaseEngine(abc.ABC):
@@ -24,16 +24,12 @@ class RandomEngine(BaseEngine):
 
 class AlphaBetaEngine(BaseEngine):
     VALUE_DICT = {
-        "p": -1,
-        "n": -3,
-        "b": -3,
-        "r": -5,
-        "q": -9,
-        "P": 1,
-        "N": 3,
-        "B": 3,
-        "R": 5,
-        "Q": 9,
+        PAWN: 1,
+        KNIGHT: 3,
+        BISHOP: 3.01,
+        ROOK: 5,
+        QUEEN: 9,
+        KING: 0,
     }
 
     # FIXME same game issue
@@ -80,7 +76,17 @@ class AlphaBetaEngine(BaseEngine):
 
 
     def evaluate_board(self, board: Board) -> float:
-        return sum(
-            self.VALUE_DICT.get(piece, 0)
-            for piece in board.fen()
-        )
+        evaluation = 0
+        for square in SQUARES_180:
+            piece_type = board.piece_type_at(square)
+            if piece_type:
+                mask = BB_SQUARES[square]
+                color = bool(board.occupied_co[WHITE] & mask)
+
+                piece_value = self.VALUE_DICT[piece_type]
+                if color == WHITE:
+                    evaluation += piece_value
+                else:
+                    evaluation -= piece_value
+
+        return evaluation

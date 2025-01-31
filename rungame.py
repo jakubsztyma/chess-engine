@@ -6,7 +6,7 @@ import chess
 import chess.engine
 import time
 
-from engines import RandomEngine, MinMaxEngine, AlphaBetaEngine
+from engines import RandomEngine, AlphaBetaEngine
 
 
 # Create a new chess board
@@ -67,5 +67,5 @@ if __name__ == '__main__':
         white_result += game_result
 
     end = time.time()
-    # Match result: 23.5 : 1.5, Elapsed: 143.66650891304016
+    # Match result: 24.0 : 1.0, Elapsed: 65.82187390327454
     print(f"Match result: {white_result} : {GAMES_COUNT - white_result}, Elapsed: {end-start}")
