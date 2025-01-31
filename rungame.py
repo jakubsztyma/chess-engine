@@ -4,6 +4,7 @@ Example of use of GameSession and Engine to make Stockfish play itself.
 
 import chess
 import chess.engine
+import time
 
 from engines import RandomEngine, MinMaxEngine
 
@@ -54,11 +55,16 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 50
+    GAMES_COUNT = 25
     white_result = 0
+
+
+    start = time.time()
     for i in range(GAMES_COUNT):
         game_result = Game(MinMaxEngine(), RandomEngine()).play()
-        print(game_result)
+        print(f"Game {i}: {game_result}")
         white_result += game_result
 
-    print(f"Match result: {white_result} : {GAMES_COUNT - white_result}")
+    end = time.time()
+    # 341
+    print(f"Match result: {white_result} : {GAMES_COUNT - white_result}, Elapsed: {end-start}")

@@ -1,4 +1,5 @@
 import abc
+import math
 import random
 
 from chess import Board
@@ -21,25 +22,24 @@ class RandomEngine(BaseEngine):
 class MinMaxEngine(BaseEngine): # TODO improve the code
     def play(self, board: Board, *args, **kwargs):
         best_move, evaluation = self.find_move(board, depth=3, is_white=board.turn)
-
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool):
         if depth == 0:
-            return None, sum(self.evaluale_piece(c) for c in board.fen())
+            return None, self.evaluate_board(board)
 
-        if len(list(board.legal_moves)) == 0: # FIXME improve
+        best_move = None
+        best_result = -math.inf if is_white else math.inf # TODO describe
+
+        if board.is_checkmate():
+            return None, best_result # Minimal result
+
+        first_legal_move = next(iter(board.legal_moves), -1)
+        if first_legal_move == -1: # No moves - stalemate
             return None, 0 # Draw
-
-        best_move = next(iter(board.legal_moves))
-        best_result = -9999999 if is_white else 9999999 # TODO
 
         for move in board.legal_moves:
             board.push(move)
-            if board.is_checkmate(): # TODO improve the code
-                best_move = move
-                board.pop()
-                break
 
             _, result = self.find_move(board, depth=depth-1, is_white=board.turn)
 
@@ -51,22 +51,26 @@ class MinMaxEngine(BaseEngine): # TODO improve the code
 
         return best_move, best_result
 
-    def evaluale_piece(self, piece: str) -> float:
-        piece_lower = piece.lower()
-        if piece_lower == "p":
-            piece_value = 1
-        elif piece_lower == "n":
-            piece_value = 3
-        elif piece_lower == "b":
-            piece_value = 3
-        elif piece_lower == "r":
-            piece_value = 5
-        elif piece_lower == "q":
-            piece_value = 9
-        else:
-            piece_value = 0
+    def evaluate_board(self, board: Board) -> float:
+        evaluation = 0
+        for piece in board.fen():
+            match piece.lower():
+                case "p":
+                    piece_value = 1
+                case "n":
+                    piece_value = 3
+                case "b":
+                    piece_value = 3
+                case "r":
+                    piece_value = 5
+                case "q":
+                    piece_value = 9
+                case _:
+                    piece_value = 0
 
-        if piece.islower():
-            piece_value = -piece_value
-        return piece_value
+            if piece.isupper():
+                evaluation += piece_value
+            else:
+                evaluation -= piece_value
+        return evaluation
 
