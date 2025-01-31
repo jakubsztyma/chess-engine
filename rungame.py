@@ -5,7 +5,7 @@ Example of use of GameSession and Engine to make Stockfish play itself.
 import chess
 import chess.engine
 
-from engines import RandomEngine
+from engines import RandomEngine, MinMaxEngine
 
 
 # Create a new chess board
@@ -26,9 +26,12 @@ class Game:
                 side = "Black"
                 engine = self.black
 
-            result = engine.play(board, chess.engine.Limit(time=0.1))  # 0.5 seconds for move
-            print(f"{board.fullmove_number} {side}: {result.move}")
+            # FIXME copy the board
+            result = engine.play(board, chess.engine.Limit(time=0.1))  # 0.1 seconds for move
+            # print(f"{board.fullmove_number} {side}: {result.move}")
             board.push(result.move)
+            if board.is_checkmate(): # TODO more generic
+                break
 
         print(board.result())
 
@@ -38,7 +41,10 @@ class Game:
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
-    engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
-    stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    Game(stockfish, RandomEngine()).play()
+    # TODO use stockfish for evaluation
+    # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
+    # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
+
+    for i in range(50):
+        Game(MinMaxEngine(), RandomEngine()).play()
