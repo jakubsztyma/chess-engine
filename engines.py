@@ -46,7 +46,7 @@ class AdvancedMaterialEvaluator(BaseEvaluator):
         KING: 0,
     }
     def evaluate(self, board: Board) -> float:
-        evaluation = 0
+        white_material = black_material = 0
         for square in SQUARES_180:
             piece_type = board.piece_type_at(square)
             if piece_type:
@@ -55,10 +55,37 @@ class AdvancedMaterialEvaluator(BaseEvaluator):
 
                 piece_value = self.VALUE_DICT[piece_type]
                 if color == WHITE:
-                    evaluation += piece_value
+                    white_material += piece_value
                 else:
-                    evaluation -= piece_value
-        return evaluation
+                    black_material += piece_value
+
+        material_difference = white_material - black_material
+
+        # TODO refactor code
+        worse_material = min(white_material, black_material)
+        if worse_material < 2:
+            better_material = max(white_material, black_material)
+            cutoff_result = None
+            if worse_material == 0:
+                if better_material >= 6.5:
+                    cutoff_result = 50. + better_material # This should almost always be winning except for very rare cases
+                elif better_material >= 5:
+                    cutoff_result = 10. + better_material # This should usually be winning except for rare cases
+            if 0 < worse_material < 2:
+                if better_material >= 10:
+                    cutoff_result = 10. + better_material # This should usually be winning except for rare cases
+            if cutoff_result is not None:
+                if black_material > white_material:
+                    cutoff_result = - cutoff_result
+                return cutoff_result
+
+        percentage_left = (white_material + black_material) / 78.
+        offset = 1. - percentage_left
+        if abs(material_difference) > 1.95:
+            if black_material > white_material:
+                offset = -offset
+
+        return material_difference + offset
 
 
 class BaseEngine(abc.ABC):
@@ -82,7 +109,7 @@ class RandomEngine(BaseEngine):
 
 class AlphaBetaEngine(BaseEngine):
     def play(self, board: Board, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=4, is_white=board.turn, alpha=-math.inf, beta=math.inf)
+        best_move, evaluation = self.find_move(board, depth=3, is_white=board.turn, alpha=-math.inf, beta=math.inf)
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
@@ -98,7 +125,7 @@ class AlphaBetaEngine(BaseEngine):
                     result_sign = -1
                 case _:
                     result_sign = 0
-            return None, result_sign * math.inf
+            return None, result_sign * 999
 
 
         best_move = None

@@ -39,7 +39,11 @@ class Game:
                 engine = self.black
 
             best_move = engine.play(board.copy(), chess.engine.Limit(time=0.1)).move  # 0.1 seconds for move
-            board.push(best_move)
+            try:
+                board.push(best_move)
+            except Exception as ex:
+                print(game)
+                return
             node = node.add_variation(best_move)  # Add game node
 
             if board.is_game_over():
@@ -71,7 +75,7 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 10
+    GAMES_COUNT = 100
     white_result = 0
 
     game_results = []
@@ -83,7 +87,7 @@ if __name__ == '__main__':
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
-    # Best: Match result: 25 : 0, Elapsed: 149.67 (but quite a lot time elapsed)
+    # Best against random: Match result: 25 : 0, Elapsed: 149.67 (but quite a lot time elapsed)
     # Match result: 10 : 0, Elapsed: 76.9123067855835. Fullmoves: 273. Time per move: 0.2817300614856538
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
