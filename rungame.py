@@ -3,7 +3,7 @@ Example of use of GameSession and Engine to make Stockfish play itself.
 """
 
 import chess
-import chess.engine
+import chess.engine, chess.pgn
 import time
 
 from engines import RandomEngine, AlphaBetaEngine
@@ -16,20 +16,24 @@ class Game:
         self.black = black
 
     def play(self):
+        game = chess.pgn.Game()
+        game.headers["White"] = str(self.white)
+        game.headers["Black"] = str(self.black)
+        node = game
+
         board = chess.Board()
 
         while board.result() == "*":
             # Get the best move from the engine
             if board.turn:
-                side = "White"
                 engine = self.white
             else:
-                side = "Black"
                 engine = self.black
 
-            result = engine.play(board.copy(), chess.engine.Limit(time=0.1))  # 0.1 seconds for move
-            # print(f"{board.fullmove_number} {side}: {result.move}")
-            board.push(result.move)
+            best_move = engine.play(board.copy(), chess.engine.Limit(time=0.1)).move  # 0.1 seconds for move
+            board.push(best_move)
+            node = node.add_variation(best_move)  # Add game node
+
             if board.is_game_over():
                 break
 
@@ -38,8 +42,10 @@ class Game:
         self.white.quit()
         self.black.quit()
 
-        result = board.result()
-        match result:
+        print(game) # PGN
+
+        best_move = board.result()
+        match best_move:
             case "1-0":
                 return 1
             case "0-1":
@@ -62,6 +68,8 @@ if __name__ == '__main__':
     start = time.time()
     for i in range(GAMES_COUNT):
         game_result = Game(AlphaBetaEngine(), RandomEngine()).play()
+        if game_result < 1:
+            break
         end = time.time()
         print(f"Game {i}: {game_result}, Elapsed: {end-start}")
         white_result += game_result

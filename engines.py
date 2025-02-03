@@ -5,6 +5,7 @@ import random
 from chess import Board, SQUARES_180, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING, WHITE, BB_SQUARES
 from chess.engine import PlayResult
 
+
 class BaseEngine(abc.ABC):
     @abc.abstractmethod
     def play(self, board: Board, *args, **kwargs):
@@ -38,20 +39,26 @@ class AlphaBetaEngine(BaseEngine):
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
+        if board.is_game_over():
+            result = board.result()
+            match result:
+                case "1-0":
+                    result_sign = 1
+                case "0-1":
+                    result_sign = -1
+                case _:
+                    result_sign = 0
+            return None, result_sign * math.inf
+
         if depth == 0:
             return None, self.evaluate_board(board)
 
         best_move = None
         best_result = -math.inf if is_white else math.inf # TODO describe
 
-        if board.is_checkmate():
-            return None, best_result # Minimal result
-
-        first_legal_move = next(iter(board.legal_moves), -1)
-        if first_legal_move == -1: # No moves - stalemate
-            return None, 0 # Draw
-
-        for move in board.legal_moves:
+        legal_moves = list(board.legal_moves)
+        random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece
+        for move in legal_moves:
             board.push(move)
 
             _, result = self.find_move(board, depth=depth-1, is_white=board.turn, alpha=alpha, beta=beta)
