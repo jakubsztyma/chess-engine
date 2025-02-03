@@ -109,7 +109,7 @@ class RandomEngine(BaseEngine):
 
 class AlphaBetaEngine(BaseEngine):
     def play(self, board: Board, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=3, is_white=board.turn, alpha=-math.inf, beta=math.inf)
+        best_move, evaluation = self.find_move(board, depth=4, is_white=board.turn, alpha=-math.inf, beta=math.inf)
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
@@ -131,9 +131,7 @@ class AlphaBetaEngine(BaseEngine):
         best_move = None
         best_result = -math.inf if is_white else math.inf # Anti-optimum
 
-        legal_moves = list(board.legal_moves)
-        random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece
-        for move in legal_moves:
+        for move in self.get_legal_moves(board, depth=depth):
             board.push(move)
 
             _, result = self.find_move(board, depth=depth-1, is_white=board.turn, alpha=alpha, beta=beta)
@@ -156,4 +154,21 @@ class AlphaBetaEngine(BaseEngine):
 
         return best_move, best_result
 
+    def get_legal_moves(self, board: Board, depth: int):
+        return board.legal_moves
+
+        # TODO restore after finding the better sorting algo than the default
+        # random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece # TODO restore? Only to extent?
+        # if depth <= 1:
+        #     return legal_moves
+        #
+        # moves_with_evaluation = []
+        # for move in legal_moves:
+        #     board.push(move)
+        #     evaluation = self.evaluator.evaluate(board)
+        #     moves_with_evaluation.append((move, evaluation))
+        #     board.pop()
+        #
+        # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
+        # return [move for move, _ in moves_with_evaluation]
 

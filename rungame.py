@@ -75,20 +75,20 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 100
+    GAMES_COUNT = 25
     white_result = 0
 
     game_results = []
     for i in range(GAMES_COUNT):
-        game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
+        # game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
+        game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), RandomEngine(BasicMaterialEvaluator())).play()
         print(f"Game {i} result: {game_result.result}")
         game_results.append(game_result)
 
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
-    # Best against random: Match result: 25 : 0, Elapsed: 149.67 (but quite a lot time elapsed)
-    # Match result: 10 : 0, Elapsed: 76.9123067855835. Fullmoves: 273. Time per move: 0.2817300614856538
+    # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "
