@@ -81,8 +81,7 @@ if __name__ == '__main__':
 
     game_results = []
     for i in range(GAMES_COUNT):
-        # game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
-        game_result = Game(ABDepthPruningEngine(AdvancedMaterialEvaluator()), RandomEngine(BasicMaterialEvaluator())).play()
+        game_result = Game(ABDepthPruningEngine(BasicMaterialEvaluator()), RandomEngine(BasicMaterialEvaluator())).play()
         print(f"Game {i} result: {game_result.result}")
         game_results.append(game_result)
 
@@ -91,6 +90,9 @@ if __name__ == '__main__':
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
     # Best against MinMax: Match result: 18.5 : 6.5, Elapsed: 978.7190129756927. Fullmoves: 5079. Time per move: 0.1926991559314221
+
+    # AB result: Match result: 25 : 0, Elapsed: 98.19945359230042. Fullmoves: 1193. Time per move: 0.08231303737829038
+    # ABDepthPrune result: Match result: 25 : 0, Elapsed: 100.96078062057495. Fullmoves: 1521. Time per move: 0.06637789652897762
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "

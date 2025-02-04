@@ -205,7 +205,7 @@ class ABDepthPruningEngine(BaseEngine):
         best_move = None
         best_result = -math.inf if is_white else math.inf  # Anti-optimum
 
-        for move in self.get_pruned_moves(board, depth=depth):
+        for move in self.get_pruned_moves(board, depth=depth, alpha=alpha, beta=beta):
             board.push(move)
 
             _, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
@@ -228,24 +228,40 @@ class ABDepthPruningEngine(BaseEngine):
 
         return best_move, best_result
 
-    def get_pruned_moves(self, board: Board, depth: int) -> list:
-        moves = self.get_legal_moves(board, depth=depth)
-        if depth < 2:
-            return moves
+    def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
+        moves = list(self.get_legal_moves(board, depth=depth))
+        return moves
+        # if depth != 2:
+        #     return moves
+        #
+        # priority_bonus_step = 0.1 if board.turn else -0.1 # TODO explain
+        # moves_with_evaluation = []
+        # for i, move in enumerate(moves):
+        #     priority_bonus = (len(moves) - i) * priority_bonus_step
+        #     board.push(move)
+        #     evaluation = self.evaluator.evaluate(board)
+        #     moves_with_evaluation.append((move, evaluation + priority_bonus))
+        #     board.pop()
+        #
+        # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
+        # moves_sorted = [move for move, _ in moves_with_evaluation]
+        # return moves_sorted[:1 + math.ceil(len(moves_sorted) * 0.75)] # Prune worst moves # TODO try with other rules
 
-        moves_with_evaluation = []
-        for move in moves:
-            board.push(move)
-            _, result = self.find_move(board, depth-2, board.turn, -math.inf, math.inf) # Lower depth # TODO use alpha-beta from main search?
-            moves_with_evaluation.append((move, result))
-            board.pop()
+    def get_legal_moves(self, board: Board, depth: int) -> list:
+        moves = list(board.legal_moves)
+        # FIXME Shuffle piece moves in a smarter way
+        # # Shuffle piece moves to try different piece types equally
+        # piece_moves = [m for m in moves if PAWN != board.piece_type_at(m.from_square)]
+        # random.shuffle(piece_moves)
+        # pawn_moves = [m for m in moves if PAWN == board.piece_type_at(m.from_square)] # TODO
+        # moves = piece_moves + pawn_moves
 
-        moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
-        moves_sorted = [move for move, _ in moves_with_evaluation]
-        return moves_sorted[:1 + math.ceil(len(moves_sorted) * 0.75)] # Prune worst moves # TODO try with other rules
-
-    def get_legal_moves(self, board: Board, depth: int):
-        return board.legal_moves
+        evaluated_moves = [
+            (board.is_capture(move), len(moves) - i, move)
+            for i, move in enumerate(moves)
+        ]
+        evaluated_moves.sort(reverse=True)
+        return [e[-1] for e in evaluated_moves]
 
     # TODO restore after finding the better sorting algo than the default
     # random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece # TODO restore? Only to extent?
