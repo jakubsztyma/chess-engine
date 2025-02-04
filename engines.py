@@ -189,18 +189,76 @@ class AlphaBetaEngine(BaseEngine):
     def get_legal_moves(self, board: Board, depth: int):
         return board.legal_moves
 
-        # TODO restore after finding the better sorting algo than the default
-        # random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece # TODO restore? Only to extent?
-        # if depth <= 1:
-        #     return legal_moves
-        #
-        # moves_with_evaluation = []
-        # for move in legal_moves:
-        #     board.push(move)
-        #     evaluation = self.evaluator.evaluate(board)
-        #     moves_with_evaluation.append((move, evaluation))
-        #     board.pop()
-        #
-        # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
-        # return [move for move, _ in moves_with_evaluation]
+class ABDepthPruningEngine(BaseEngine):
+    def play(self, board: Board, *args, **kwargs):
+        best_move, evaluation = self.find_move(board, depth=4, is_white=board.turn, alpha=-math.inf,
+                                               beta=math.inf)
+        return PlayResult(best_move, None)
+
+    def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
+        if depth == 0:
+            return None, self.evaluator.evaluate(board)
+
+        if board.is_game_over():
+            return self._get_board_result(board)
+
+        best_move = None
+        best_result = -math.inf if is_white else math.inf  # Anti-optimum
+
+        for move in self.get_pruned_moves(board, depth=depth):
+            board.push(move)
+
+            _, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
+
+            if is_white:
+                if result > best_result:
+                    best_result = result
+                    best_move = move
+                alpha = max(alpha, result)
+            else:
+                if result < best_result:
+                    best_result = result
+                    best_move = move
+                beta = min(beta, result)
+
+            board.pop()
+
+            if beta <= alpha:
+                break
+
+        return best_move, best_result
+
+    def get_pruned_moves(self, board: Board, depth: int) -> list:
+        moves = self.get_legal_moves(board, depth=depth)
+        if depth < 2:
+            return moves
+
+        moves_with_evaluation = []
+        for move in moves:
+            board.push(move)
+            _, result = self.find_move(board, depth-2, board.turn, -math.inf, math.inf) # Lower depth # TODO use alpha-beta from main search?
+            moves_with_evaluation.append((move, result))
+            board.pop()
+
+        moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
+        moves_sorted = [move for move, _ in moves_with_evaluation]
+        return moves_sorted[:1 + math.ceil(len(moves_sorted) * 0.75)] # Prune worst moves # TODO try with other rules
+
+    def get_legal_moves(self, board: Board, depth: int):
+        return board.legal_moves
+
+    # TODO restore after finding the better sorting algo than the default
+    # random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece # TODO restore? Only to extent?
+    # if depth <= 1:
+    #     return legal_moves
+    #
+    # moves_with_evaluation = []
+    # for move in legal_moves:
+    #     board.push(move)
+    #     evaluation = self.evaluator.evaluate(board)
+    #     moves_with_evaluation.append((move, evaluation))
+    #     board.pop()
+    #
+    # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
+    # return [move for move, _ in moves_with_evaluation]
 

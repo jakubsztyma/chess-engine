@@ -7,7 +7,8 @@ import chess
 import chess.engine, chess.pgn
 import time
 
-from engines import RandomEngine, AlphaBetaEngine, BasicMaterialEvaluator, AdvancedMaterialEvaluator, MinMaxEngine
+from engines import RandomEngine, AlphaBetaEngine, BasicMaterialEvaluator, AdvancedMaterialEvaluator, MinMaxEngine, \
+    ABDepthPruningEngine
 
 
 @dataclass
@@ -81,7 +82,7 @@ if __name__ == '__main__':
     game_results = []
     for i in range(GAMES_COUNT):
         # game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
-        game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), MinMaxEngine(BasicMaterialEvaluator())).play()
+        game_result = Game(ABDepthPruningEngine(AdvancedMaterialEvaluator()), RandomEngine(BasicMaterialEvaluator())).play()
         print(f"Game {i} result: {game_result.result}")
         game_results.append(game_result)
 
