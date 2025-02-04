@@ -7,7 +7,7 @@ import chess
 import chess.engine, chess.pgn
 import time
 
-from engines import RandomEngine, AlphaBetaEngine, BasicMaterialEvaluator, AdvancedMaterialEvaluator
+from engines import RandomEngine, AlphaBetaEngine, BasicMaterialEvaluator, AdvancedMaterialEvaluator, MinMaxEngine
 
 
 @dataclass
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     game_results = []
     for i in range(GAMES_COUNT):
         # game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
-        game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), RandomEngine(BasicMaterialEvaluator())).play()
+        game_result = Game(AlphaBetaEngine(AdvancedMaterialEvaluator()), MinMaxEngine(BasicMaterialEvaluator())).play()
         print(f"Game {i} result: {game_result.result}")
         game_results.append(game_result)
 
@@ -89,6 +89,7 @@ if __name__ == '__main__':
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
+    # Best against MinMax: Match result: 18.5 : 6.5, Elapsed: 978.7190129756927. Fullmoves: 5079. Time per move: 0.1926991559314221
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "
