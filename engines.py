@@ -5,6 +5,7 @@ import random
 from chess import Board, SQUARES_180, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING, WHITE, BB_SQUARES
 from chess.engine import PlayResult
 
+MATE_EVALUATION = 1000
 
 
 class BaseEvaluator:
@@ -36,7 +37,7 @@ class BasicMaterialEvaluator(BaseEvaluator):
                     evaluation -= piece_value
         return evaluation
 
-class AdvancedMaterialEvaluator(BaseEvaluator):
+class V0Evaluator(BaseEvaluator):
     VALUE_DICT = {
         PAWN: 1,
         KNIGHT: 3,
@@ -47,6 +48,7 @@ class AdvancedMaterialEvaluator(BaseEvaluator):
     }
     def evaluate(self, board: Board) -> float:
         white_material = black_material = 0
+        # Calculate material
         for square in SQUARES_180:
             piece_type = board.piece_type_at(square)
             if piece_type:
@@ -61,7 +63,7 @@ class AdvancedMaterialEvaluator(BaseEvaluator):
 
         material_difference = white_material - black_material
 
-        # TODO refactor code
+        # Bonus to winning advantage in endgame
         worse_material = min(white_material, black_material)
         if worse_material < 2:
             better_material = max(white_material, black_material)
@@ -79,6 +81,7 @@ class AdvancedMaterialEvaluator(BaseEvaluator):
                     cutoff_result = - cutoff_result
                 return cutoff_result
 
+        # Bonus for simplification while winning
         percentage_left = (white_material + black_material) / 78.
         offset = 1. - percentage_left
         if abs(material_difference) > 1.95:
@@ -108,7 +111,7 @@ class BaseEngine(abc.ABC):
                 result_sign = -1
             case _:
                 result_sign = 0
-        return None, result_sign * 999
+        return None, result_sign * MATE_EVALUATION
 
 class RandomEngine(BaseEngine):
     def play(self, board: Board, *args, **kwargs):
@@ -191,7 +194,7 @@ class AlphaBetaEngine(BaseEngine):
 
 class ABDepthPruningEngine(BaseEngine):
     def play(self, board: Board, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=4, is_white=board.turn, alpha=-math.inf,
+        best_move, evaluation = self.find_move(board, depth=5, is_white=board.turn, alpha=-math.inf,
                                                beta=math.inf)
         return PlayResult(best_move, None)
 
@@ -204,11 +207,14 @@ class ABDepthPruningEngine(BaseEngine):
 
         best_move = None
         best_result = -math.inf if is_white else math.inf  # Anti-optimum
+        evaluation_sign = 1 if is_white else -1
 
         for move in self.get_pruned_moves(board, depth=depth, alpha=alpha, beta=beta):
             board.push(move)
 
             _, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
+            if abs(result) >= MATE_EVALUATION: # Reduce mate evaluation with depth # FIXME debug it
+                result -= evaluation_sign
 
             if is_white:
                 if result > best_result:
@@ -250,6 +256,7 @@ class ABDepthPruningEngine(BaseEngine):
     def get_legal_moves(self, board: Board, depth: int) -> list:
         moves = list(board.legal_moves)
         # FIXME Shuffle piece moves in a smarter way
+        # FIXME find a way to promote pawn moves in endgame -- position evaluation?
         # # Shuffle piece moves to try different piece types equally
         # piece_moves = [m for m in moves if PAWN != board.piece_type_at(m.from_square)]
         # random.shuffle(piece_moves)
@@ -257,7 +264,7 @@ class ABDepthPruningEngine(BaseEngine):
         # moves = piece_moves + pawn_moves
 
         evaluated_moves = [
-            (board.is_capture(move), len(moves) - i, move)
+            (V0Evaluator.VALUE_DICT.get(board.piece_type_at(move.to_square), 0), len(moves) - i, move)
             for i, move in enumerate(moves)
         ]
         evaluated_moves.sort(reverse=True)
