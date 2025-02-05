@@ -76,7 +76,7 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 5
+    GAMES_COUNT = 25
     white_result = 0
 
     game_results = []
@@ -90,10 +90,10 @@ if __name__ == '__main__':
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
     # Best against MinMax: Match result: 18.5 : 6.5, Elapsed: 978.7190129756927. Fullmoves: 5079. Time per move: 0.1926991559314221
-    # Best against MinMax (depth 5): Match result: 23.5 : 1.5, Elapsed: 2344.55770111084. Fullmoves: 3293. Time per move: 0.7119822961162586
+    # Best against MinMax (depth 5): Match result: 23.0 : 2.0, Elapsed: 1270.3743450641632. Fullmoves: 1590. Time per move: 0.7989775755120523
 
-    # AB result: Match result: 25 : 0, Elapsed: 98.19945359230042. Fullmoves: 1193. Time per move: 0.08231303737829038
-    # ABDepthPrune result: Match result: 25 : 0, Elapsed: 100.96078062057495. Fullmoves: 1521. Time per move: 0.06637789652897762
+    # AB result against random: Match result: 25 : 0, Elapsed: 98.19945359230042. Fullmoves: 1193. Time per move: 0.08231303737829038
+    # ABDepthPrune result against random: Match result: 25 : 0, Elapsed: 100.96078062057495. Fullmoves: 1521. Time per move: 0.06637789652897762
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "

@@ -213,8 +213,12 @@ class ABDepthPruningEngine(BaseEngine):
             board.push(move)
 
             _, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
-            if abs(result) >= MATE_EVALUATION: # Reduce mate evaluation with depth # FIXME debug it
-                result -= evaluation_sign
+
+            if abs(result) >= MATE_EVALUATION - 100:  # TODO improve code
+                if (result > 0 and is_white) or (result < 0 and not is_white):
+                    result -= evaluation_sign # Reduce winning side mate evaluation with depth
+                elif (result < 0 and is_white) or (result > 0 and not is_white):
+                    result += evaluation_sign # Increase losing side mate evaluation with depth
 
             if is_white:
                 if result > best_result:
@@ -256,7 +260,7 @@ class ABDepthPruningEngine(BaseEngine):
     def get_legal_moves(self, board: Board, depth: int) -> list:
         moves = list(board.legal_moves)
         # FIXME Shuffle piece moves in a smarter way
-        # FIXME find a way to promote pawn moves in endgame -- position evaluation?
+        # FIXME find a way to promote pawn moves in endgame and opening -- position evaluation?
         # # Shuffle piece moves to try different piece types equally
         # piece_moves = [m for m in moves if PAWN != board.piece_type_at(m.from_square)]
         # random.shuffle(piece_moves)
