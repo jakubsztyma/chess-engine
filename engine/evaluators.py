@@ -48,7 +48,15 @@ class V0Evaluator(BaseEvaluator):
         return self._evaluate_material(board) + self._evaluate_position(board)
 
     def _evaluate_position(self, board: Board) -> float:
-        return 0. # TODO finish
+        evaluation = 0.
+        turn_sign = 1 if board.turn else -1
+
+        if board.is_check():
+            # Being in check makes evaluation worse
+            evaluation -= turn_sign * 0.2
+        # TODO Piece position (not first rank)
+        # TODO pawn position, king position
+        return evaluation
 
     def _evaluate_material(self, board: Board) -> float:
         white_material = black_material = 0

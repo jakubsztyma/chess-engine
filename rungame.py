@@ -9,7 +9,7 @@ import time
 
 from engine.ab_depth_prune import ABDepthPruningEngine
 from engine.minmax import MinMaxEngine
-from engine.evaluators import BasicMaterialEvaluator
+from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
 
 
 @dataclass
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     game_results = []
     for i in range(GAMES_COUNT):
-        game_result = Game(ABDepthPruningEngine(BasicMaterialEvaluator()), MinMaxEngine(BasicMaterialEvaluator())).play()
+        game_result = Game(ABDepthPruningEngine(V0Evaluator()), MinMaxEngine(BasicMaterialEvaluator())).play()
         print(f"Game {i} result: {game_result.result}")
         game_results.append(game_result)
 
@@ -92,11 +92,8 @@ if __name__ == '__main__':
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
     # Best against MinMax: Match result: 18.5 : 6.5, Elapsed: 978.7190129756927. Fullmoves: 5079. Time per move: 0.1926991559314221
-    # Best against MinMax (depth 5): Match result: 23.0 : 2.0, Elapsed: 1270.3743450641632. Fullmoves: 1590. Time per move: 0.7989775755120523
-    # Best against MinMax (depth 5): Match result: 24 : 1, Elapsed: 2366.6964757442474. Fullmoves: 1826. Time per move: 1.29610978956421
+    # Best against MinMax (depth 5): Match result: 24 : 1, Elapsed: 1119.2212266921997. Fullmoves: 1208. Time per move: 0.9265076379902315
 
-    # AB result against random: Match result: 25 : 0, Elapsed: 98.19945359230042. Fullmoves: 1193. Time per move: 0.08231303737829038
-    # ABDepthPrune result against random: Match result: 25 : 0, Elapsed: 100.96078062057495. Fullmoves: 1521. Time per move: 0.06637789652897762
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "
