@@ -2,12 +2,14 @@
 Example of use of GameSession and Engine to make Stockfish play itself.
 """
 from dataclasses import dataclass
+from multiprocessing import Pool
 
 import chess
 import chess.engine, chess.pgn
 import time
 
 from engine.ab_depth_prune import ABDepthPruningEngine
+from engine.base import RandomEngine
 from engine.minmax import MinMaxEngine
 from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
 
@@ -70,6 +72,8 @@ class Game:
 
         return GameResult(result, board.fullmove_number, elapsed)
 
+def play_game():
+    return Game(ABDepthPruningEngine(V0Evaluator()), RandomEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -81,11 +85,14 @@ if __name__ == '__main__':
     GAMES_COUNT = 25
     white_result = 0
 
-    game_results = []
-    for i in range(GAMES_COUNT):
-        game_result = Game(ABDepthPruningEngine(V0Evaluator()), MinMaxEngine(BasicMaterialEvaluator())).play()
-        print(f"Game {i} result: {game_result.result}")
-        game_results.append(game_result)
+
+    with Pool(5) as pool:
+        async_results = [
+            pool.apply_async(play_game, ()) for _ in range(GAMES_COUNT)
+        ]
+        game_results = [r.get() for r in async_results]
+        for i, gr in enumerate(game_results):
+            print(f"Game {i} result: {gr.result}")
 
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)

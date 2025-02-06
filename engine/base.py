@@ -1,6 +1,7 @@
 import abc
 import random
 from chess import Board
+from chess.engine import PlayResult
 
 from engine.evaluators import MATE_EVALUATION, BaseEvaluator
 
