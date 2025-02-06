@@ -1,7 +1,9 @@
 import pytest
 from chess import Board
 
-from engines import ABDepthPruningEngine, V0Evaluator
+from engine.ab_depth_prune import ABDepthPruningEngine
+from engine.evaluators import V0Evaluator
+
 
 @pytest.mark.parametrize("fen, expected_response", [
     # Mate in 1
