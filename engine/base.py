@@ -29,7 +29,7 @@ class BaseEngine(abc.ABC):
             try:
                 play_result = self._play(board, depth)
             except ExpectedTimeoutException:
-                return play_result
+                break
 
         return play_result
 

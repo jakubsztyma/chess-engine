@@ -1,18 +1,64 @@
+import time
+
 import math
 
-from engine.base import BaseEngine
+from engine.base import BaseEngine, ExpectedTimeoutException
 from engine.evaluators import V0Evaluator
 from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK
-from chess.engine import PlayResult
+from chess.engine import PlayResult, Limit
 
 
 class ABDepthPruningEngine(BaseEngine):
-    def _play(self, board: Board, depth: int, *args, **kwargs):
-        best_line, evaluation = self.find_move(board, depth=depth, is_white=board.turn, alpha=-math.inf,
-                                               beta=math.inf)
-        return PlayResult(best_line[-1], None)
+    def play(self, board: Board, limit: Limit):
+        is_white = board.turn
+        anti_optimum = -math.inf if is_white else math.inf
 
-    def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
+        self.start_time = time.time()
+        self.time = limit.time
+        play_result = None
+        best_line = None
+
+        move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves(board)]
+        for depth in range(1, self.max_depth + 1):
+            try:
+                alpha = -math.inf
+                beta = math.inf
+
+                best_result = anti_optimum
+
+                move_evaluation_map.sort(key=lambda it: it[0], reverse=is_white)
+                for move_item in move_evaluation_map:
+                    move = move_item[1]
+                    board.push(move)
+                    line, evaluation = self.find_move(board, depth=depth - 1, alpha=alpha, beta=beta)
+                    move_item[0] = evaluation
+
+                    if is_white:
+                        if evaluation > best_result:
+                            best_result = evaluation
+                            line.append(move)
+                            best_line = line
+                        alpha = max(alpha, evaluation)
+                    else:
+                        if evaluation < best_result:
+                            best_result = evaluation
+                            line.append(move)
+                            best_line = line
+                        beta = min(beta, evaluation)
+
+                    board.pop()
+            except ExpectedTimeoutException:
+                play_result = PlayResult(best_line[-1], None)
+                break
+
+        return play_result
+
+    def _play(self, *args, **kwargs):
+        pass
+
+
+    def find_move(self, board: Board, depth: int, alpha: float, beta: float):
+        is_white = board.turn
         self.check_timeout()
         if depth == 0:
             return [None], self.evaluator.evaluate(board)
@@ -28,20 +74,20 @@ class ABDepthPruningEngine(BaseEngine):
         for move in self.get_pruned_moves(board, depth=depth, alpha=alpha, beta=beta):
             board.push(move)
 
-            line, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
+            line, evaluation = self.find_move(board, depth=depth - 1, alpha=alpha, beta=beta)
 
             if is_white:
-                if result > best_result:
-                    best_result = result
+                if evaluation > best_result:
+                    best_result = evaluation
                     line.append(move)
                     best_line = line
-                alpha = max(alpha, result)
+                alpha = max(alpha, evaluation)
             else:
-                if result < best_result:
-                    best_result = result
+                if evaluation < best_result:
+                    best_result = evaluation
                     line.append(move)
                     best_line = line
-                beta = min(beta, result)
+                beta = min(beta, evaluation)
 
             board.pop()
 
@@ -51,7 +97,7 @@ class ABDepthPruningEngine(BaseEngine):
         return best_line, best_result
 
     def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
-        moves = list(self.get_legal_moves(board, depth=depth))
+        moves = list(self.get_legal_moves(board))
         return moves
         # if depth != 2:
         #     return moves
@@ -69,7 +115,7 @@ class ABDepthPruningEngine(BaseEngine):
         # moves_sorted = [move for move, _ in moves_with_evaluation]
         # return moves_sorted[:1 + math.ceil(len(moves_sorted) * 0.75)] # Prune worst moves # TODO try with other rules
 
-    def get_legal_moves(self, board: Board, depth: int) -> list:
+    def get_legal_moves(self, board: Board) -> list:
         moves = list(board.legal_moves)
         # FIXME Shuffle piece moves in a smarter way
         # FIXME find a way to promote pawn moves in endgame and opening -- position evaluation?
