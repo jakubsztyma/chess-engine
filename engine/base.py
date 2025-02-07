@@ -52,7 +52,7 @@ class BaseEngine(abc.ABC):
                 result_sign = 0
 
         # Mate evaluation decreases with depth (when depth parameter is lower)
-        return None, result_sign * (MATE_EVALUATION + depth)
+        return [None], result_sign * (MATE_EVALUATION + depth)
 
 
 class RandomEngine(BaseEngine):

@@ -19,7 +19,7 @@ from engine.evaluators import V0Evaluator
     # Material simplification
     ("6K1/8/k7/8/3Q4/2n5/P7/1r3R2 w - - 2 96", ("d4c3", "f1b1", "d4b3")),
     # Endgame simplification
-    # ("7r/4P3/1pn5/p1p2kB1/8/2P3K1/PPP5/4R3 w - - 2 34", ("e7e8q", "e7e8r", "e7e8b", "e7e8n")) # TODO fix
+    ("7r/4P3/1pn5/p1p2kB1/8/2P3K1/PPP5/4R3 w - - 2 34", ("e7e8q", "e7e8r", "e7e8b", "e7e8n"))
 
 ])
 def test_fen_response(fen: str, expected_response: str):

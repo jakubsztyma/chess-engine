@@ -8,37 +8,39 @@ from chess.engine import PlayResult
 
 class ABDepthPruningEngine(BaseEngine):
     def _play(self, board: Board, depth: int, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=depth, is_white=board.turn, alpha=-math.inf,
+        best_line, evaluation = self.find_move(board, depth=depth, is_white=board.turn, alpha=-math.inf,
                                                beta=math.inf)
-        return PlayResult(best_move, None)
+        return PlayResult(best_line[-1], None)
 
     def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
         self.check_timeout()
         if depth == 0:
-            return None, self.evaluator.evaluate(board)
+            return [None], self.evaluator.evaluate(board)
 
         if board.is_game_over():
             return self._get_board_result(board, depth)
         # if board.can_claim_threefold_repetition():
         #     return None, 0. # TODO find a proper way to implement that
 
-        best_move = None
+        best_line = None
         best_result = -math.inf if is_white else math.inf  # Anti-optimum
 
         for move in self.get_pruned_moves(board, depth=depth, alpha=alpha, beta=beta):
             board.push(move)
 
-            _, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
+            line, result = self.find_move(board, depth=depth - 1, is_white=board.turn, alpha=alpha, beta=beta)
 
             if is_white:
                 if result > best_result:
                     best_result = result
-                    best_move = move
+                    line.append(move)
+                    best_line = line
                 alpha = max(alpha, result)
             else:
                 if result < best_result:
                     best_result = result
-                    best_move = move
+                    line.append(move)
+                    best_line = line
                 beta = min(beta, result)
 
             board.pop()
@@ -46,7 +48,7 @@ class ABDepthPruningEngine(BaseEngine):
             if beta <= alpha:
                 break
 
-        return best_move, best_result
+        return best_line, best_result
 
     def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
         moves = list(self.get_legal_moves(board, depth=depth))
