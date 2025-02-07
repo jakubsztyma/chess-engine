@@ -8,11 +8,12 @@ from engine.base import BaseEngine
 
 
 class MinMaxEngine(BaseEngine):
-    def play(self, board: Board, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=3, is_white=board.turn)
+    def _play(self, board: Board, depth: int, *args, **kwargs):
+        best_move, evaluation = self.find_move(board, depth=depth, is_white=board.turn)
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool):
+        self.check_timeout()
         if depth == 0:
             return None, self.evaluator.evaluate(board)
 

@@ -7,12 +7,13 @@ from chess.engine import PlayResult
 
 
 class ABDepthPruningEngine(BaseEngine):
-    def play(self, board: Board, *args, **kwargs):
-        best_move, evaluation = self.find_move(board, depth=5, is_white=board.turn, alpha=-math.inf,
+    def _play(self, board: Board, depth: int, *args, **kwargs):
+        best_move, evaluation = self.find_move(board, depth=depth, is_white=board.turn, alpha=-math.inf,
                                                beta=math.inf)
         return PlayResult(best_move, None)
 
     def find_move(self, board: Board, depth: int, is_white: bool, alpha: float, beta: float):
+        self.check_timeout()
         if depth == 0:
             return None, self.evaluator.evaluate(board)
 

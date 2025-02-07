@@ -1,6 +1,7 @@
 """
 Example of use of GameSession and Engine to make Stockfish play itself.
 """
+from copy import deepcopy
 from dataclasses import dataclass
 from multiprocessing import Pool
 
@@ -9,6 +10,7 @@ import chess.engine, chess.pgn
 import time
 
 from engine.ab_depth_prune import ABDepthPruningEngine
+from engine.alpha_beta import AlphaBetaEngine
 from engine.base import RandomEngine
 from engine.minmax import MinMaxEngine
 from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
@@ -42,7 +44,7 @@ class Game:
             else:
                 engine = self.black
 
-            best_move = engine.play(board.copy(), chess.engine.Limit(time=0.1)).move  # 0.1 seconds for move
+            best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.2)).move
             try:
                 board.push(best_move)
             except Exception as ex:
@@ -73,7 +75,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed)
 
 def play_game():
-    return Game(ABDepthPruningEngine(V0Evaluator()), RandomEngine(BasicMaterialEvaluator())).play()
+    return Game(ABDepthPruningEngine(V0Evaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -86,7 +88,7 @@ if __name__ == '__main__':
     white_result = 0
 
 
-    with Pool(5) as pool:
+    with Pool(10) as pool:
         async_results = [
             pool.apply_async(play_game, ()) for _ in range(GAMES_COUNT)
         ]
@@ -97,9 +99,9 @@ if __name__ == '__main__':
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
-    # Best against random: Match result: 100 : 0, Elapsed: 111.25655889511108. Fullmoves: 5888. Time per move: 0.01889547535582729
-    # Best against MinMax: Match result: 18.5 : 6.5, Elapsed: 978.7190129756927. Fullmoves: 5079. Time per move: 0.1926991559314221
-    # Best against MinMax (depth 5): Match result: 24 : 1, Elapsed: 1119.2212266921997. Fullmoves: 1208. Time per move: 0.9265076379902315
+    # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
+    # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
+    # Best against AlphaBeta (time 0.2): Match result: 19.0 : 6.0, Elapsed: 1181.155259847641. Fullmoves: 3113. Time per move: 0.37942668160862225
 
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
