@@ -63,7 +63,7 @@ class ABDepthPruningEngine(BaseEngine):
         if depth == 0:
             return [None], self.evaluator.evaluate(board)
 
-        if board.is_game_over():
+        if board.is_game_over(claim_draw=True): # TODO don't claim draw for self?
             return self._get_board_result(board, depth)
         # if board.can_claim_threefold_repetition():
         #     return None, 0. # TODO find a proper way to implement that

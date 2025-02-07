@@ -1,4 +1,5 @@
 import math
+import random
 
 from engine.base import BaseEngine
 from chess import Board
@@ -21,6 +22,8 @@ class AlphaBetaEngine(BaseEngine):
         best_move = None
         best_result = -math.inf if is_white else math.inf # Anti-optimum
 
+        legal_moves = list(self.get_legal_moves(board, depth=depth))
+        random.shuffle(legal_moves)  # Shuffle to avoid same game
         for move in self.get_legal_moves(board, depth=depth):
             board.push(move)
 

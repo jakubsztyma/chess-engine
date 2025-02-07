@@ -48,13 +48,13 @@ class Game:
                 best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.2)).move
                 board.push(best_move)
             except Exception as ex:
-                breakpoint()
-                print(engine, ex)
+                print(ex)
+                print("Failed position: ", board.fen())
                 print(game)
                 return
             node = node.add_variation(best_move)  # Add game node
 
-            if board.is_game_over():
+            if board.is_game_over(claim_draw=True):
                 break
 
 
@@ -89,14 +89,13 @@ if __name__ == '__main__':
     white_result = 0
 
 
-    # with Pool(10) as pool:
-    #     async_results = [
-    #         pool.apply_async(play_game, ()) for _ in range(GAMES_COUNT)
-    #     ]
-    #     game_results = [r.get() for r in async_results]
-    #     for i, gr in enumerate(game_results):
-    #         print(f"Game {i} result: {gr.result}")
-    play_game()
+    with Pool(10) as pool:
+        async_results = [
+            pool.apply_async(play_game, ()) for _ in range(GAMES_COUNT)
+        ]
+        game_results = [r.get() for r in async_results]
+        for i, gr in enumerate(game_results):
+            print(f"Game {i} result: {gr.result}")
 
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
