@@ -49,12 +49,11 @@ class Game:
                 board.push(best_move)
             except Exception as ex:
                 print(ex)
-                print("Failed position: ", board.fen()) # FIXME
                 print(game)
                 break
             node = node.add_variation(best_move)  # Add game node
 
-            if board.is_game_over(claim_draw=True):
+            if board.is_game_over(claim_draw=True):  # TODO how does claim_draw work exactly?
                 break
 
 
@@ -102,7 +101,7 @@ if __name__ == '__main__':
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
-    # Best against AlphaBeta (time 0.2): Match result: 21.5 : 3.5, Elapsed: 602.28906416893. Fullmoves: 1595. Time per move: 0.37761069853851414
+    # Best against AlphaBeta (time 0.2): Match result: 22.5 : 2.5, Elapsed: 443.1456003189087. Fullmoves: 1173. Time per move: 0.37778823556599206
 
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "

@@ -1,5 +1,7 @@
 import abc
-from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK
+import random
+
+from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, lsb
 
 MATE_EVALUATION = 1000
 
@@ -45,18 +47,53 @@ class V0Evaluator(BaseEvaluator):
         KING: 0,
     }
     def evaluate(self, board: Board) -> float:
-        return self._evaluate_material(board) + self._evaluate_position(board)
+        evaluation = self._evaluate_material(board) + self._evaluate_position(board)
+        # Add tiny random number to avoid having the same result for different positions
+        return evaluation + random.uniform(0, 0.01)
 
     def _evaluate_position(self, board: Board) -> float:
         evaluation = 0.
-        turn_sign = 1 if board.turn else -1
+        evaluation += self._evaluate_checks(board)
+        return evaluation
 
+    def _evaluate_piece_position(self, board, piece_type, square, color):
+        evaluation = 0.
+        row, column  = divmod(square, 8)
+        # Pawn and piece position
+        if piece_type  == PAWN:
+            # Bonus on advanced pieces
+            pawn_advance_coefficient = 0.02
+            if color == BLACK:
+                row = (7-row)
+            evaluation += pawn_advance_coefficient * row
+
+        if piece_type in (KNIGHT, BISHOP):
+            piece_centralized_coefficient = 0.05
+            piece_center_distance = abs(row - 3.5) + abs(column - 3.5)
+            evaluation -= piece_centralized_coefficient * piece_center_distance
+
+        if piece_type == ROOK:
+            rook_active_coefficient = 0.02
+            if column not in (0, 7):
+                evaluation += rook_active_coefficient
+
+        # King position
+        if piece_type == KING:
+            sign = 1
+            king_center_distance = abs(row - 3.5) + abs(column - 3.5)  # TODO what distance works best
+            if board.fullmove_number > 60:  # TODO better condition
+                # Centralized king is good in endgame
+                sign *= -1
+            evaluation +=  0.01 * sign * king_center_distance  # TODO find coefficient
+
+        return evaluation
+
+    def _evaluate_checks(self, board: Board) -> float:
+        turn_sign = -1 if board.turn else 1
         if board.is_check():
             # Being in check makes evaluation worse
-            evaluation -= turn_sign * 0.2
-        # TODO Piece position (not first rank)
-        # TODO pawn position, king position
-        return evaluation
+            return turn_sign * 0.2
+        return 0.
 
     def _evaluate_material(self, board: Board) -> float:
         white_material = black_material = 0
@@ -68,10 +105,11 @@ class V0Evaluator(BaseEvaluator):
                 color = bool(board.occupied_co[WHITE] & mask)
 
                 piece_value = self.VALUE_DICT[piece_type]
+                piece_position = self._evaluate_piece_position(board, piece_type, square, color)
                 if color == WHITE:
-                    white_material += piece_value
+                    white_material += piece_value + piece_position
                 else:
-                    black_material += piece_value
+                    black_material += piece_value + piece_position
         material_difference = white_material - black_material
         # Bonus to winning advantage in endgame
         worse_material = min(white_material, black_material)

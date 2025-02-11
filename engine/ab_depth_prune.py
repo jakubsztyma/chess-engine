@@ -15,7 +15,6 @@ class ABDepthPruningEngine(BaseEngine):
 
         self.start_time = time.time()
         self.time = limit.time
-        play_result = None
         best_line = None
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves(board)]
@@ -48,10 +47,8 @@ class ABDepthPruningEngine(BaseEngine):
 
                     board.pop()
             except ExpectedTimeoutException:
-                play_result = PlayResult(best_line[-1], None)
                 break
-
-        return play_result
+        return PlayResult(best_line[-1], None)
 
     def _play(self, *args, **kwargs):
         pass
@@ -63,10 +60,8 @@ class ABDepthPruningEngine(BaseEngine):
         if depth == 0:
             return [None], self.evaluator.evaluate(board)
 
-        if board.is_game_over(claim_draw=True): # TODO don't claim draw for self?
+        if board.is_game_over(claim_draw=True): # TODO claim draw to avoid repeating position
             return self._get_board_result(board, depth)
-        # if board.can_claim_threefold_repetition():
-        #     return None, 0. # TODO find a proper way to implement that
 
         best_line = None
         best_result = -math.inf if is_white else math.inf  # Anti-optimum
