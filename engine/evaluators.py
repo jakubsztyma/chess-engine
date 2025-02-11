@@ -62,29 +62,33 @@ class V0Evaluator(BaseEvaluator):
         # Pawn and piece position
         if piece_type  == PAWN:
             # Bonus on advanced pieces
-            pawn_advance_coefficient = 0.02
+            pawn_advance_coefficient = 0.01
             if color == BLACK:
                 row = (7-row)
             evaluation += pawn_advance_coefficient * row
 
         if piece_type in (KNIGHT, BISHOP):
-            piece_centralized_coefficient = 0.05
+            # Bonus on centralized pieces
+            piece_centralized_coefficient = 0.02
             piece_center_distance = abs(row - 3.5) + abs(column - 3.5)
             evaluation -= piece_centralized_coefficient * piece_center_distance
 
         if piece_type == ROOK:
+            # Move to center columns but avoid center rows
             rook_active_coefficient = 0.02
-            if column not in (0, 7):
-                evaluation += rook_active_coefficient
+            column_center_distance = abs(column - 3.5)
+            row_center_distance = abs(row - 3.5)
+            evaluation += rook_active_coefficient * (row_center_distance - column_center_distance)
 
         # King position
         if piece_type == KING:
+            king_coefficient = 0.01
             sign = 1
             king_center_distance = abs(row - 3.5) + abs(column - 3.5)  # TODO what distance works best
             if board.fullmove_number > 60:  # TODO better condition
                 # Centralized king is good in endgame
                 sign *= -1
-            evaluation +=  0.01 * sign * king_center_distance  # TODO find coefficient
+            evaluation += king_coefficient * sign * king_center_distance  # TODO find coefficient
 
         return evaluation
 
