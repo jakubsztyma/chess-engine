@@ -57,40 +57,46 @@ class V0Evaluator(BaseEvaluator):
         return evaluation
 
     def _evaluate_piece_position(self, board, piece_type, square, color):
-        evaluation = 0.
+        is_endgame = board.fullmove_number > 60
         row, column  = divmod(square, 8)
+        row_center_distance = abs(row - 3.5)
+        column_center_distance = abs(column - 3.5)
         # Pawn and piece position
         if piece_type  == PAWN:
             # Bonus on advanced pieces
-            pawn_advance_coefficient = 0.01
-            if color == BLACK:
-                row = (7-row)
-            evaluation += pawn_advance_coefficient * row
-
-        if piece_type in (KNIGHT, BISHOP):
-            # Bonus on centralized pieces
-            piece_centralized_coefficient = 0.02
-            piece_center_distance = abs(row - 3.5) + abs(column - 3.5)
-            evaluation -= piece_centralized_coefficient * piece_center_distance
-
-        if piece_type == ROOK:
+            pawn_advance_coefficient = 0.03
+            if column in (3, 4) or is_endgame: # Central in middlegame, all in endgame
+                if color == BLACK:
+                    row = (7-row)
+                return pawn_advance_coefficient * row
+        elif piece_type in (KNIGHT, BISHOP):
+            # Bonus on centralized pieces (in extended center)
+            piece_centralized_coefficient = 0.015
+            if row < 2 or row > 5 or column < 2 or row > 5:
+                piece_center_distance = row_center_distance + column_center_distance
+                return -piece_centralized_coefficient * piece_center_distance
+        elif piece_type == ROOK:
             # Move to center columns but avoid center rows
             rook_active_coefficient = 0.02
-            column_center_distance = abs(column - 3.5)
-            row_center_distance = abs(row - 3.5)
-            evaluation += rook_active_coefficient * (row_center_distance - column_center_distance)
-
-        # King position
-        if piece_type == KING:
+            return rook_active_coefficient * (row_center_distance - column_center_distance)
+        elif piece_type == KING:
+            # King position
             king_coefficient = 0.01
             sign = 1
-            king_center_distance = abs(row - 3.5) + abs(column - 3.5)  # TODO what distance works best
-            if board.fullmove_number > 60:  # TODO better condition
+            king_center_distance = row_center_distance + column_center_distance  # TODO what distance works best
+            if is_endgame:  # TODO better condition
                 # Centralized king is good in endgame
                 sign *= -1
-            evaluation += king_coefficient * sign * king_center_distance  # TODO find coefficient
+            return king_coefficient * sign * king_center_distance  # TODO find coefficient
+        elif piece_type == QUEEN:
+            if not is_endgame:
+                queen_coefficient = 0.03
+                if color == BLACK:
+                    row = (7 - row)
+                row_second_rank_distance = abs(1 - row)
+                return queen_coefficient * (column_center_distance + row_second_rank_distance)
 
-        return evaluation
+        return 0.
 
     def _evaluate_checks(self, board: Board) -> float:
         turn_sign = -1 if board.turn else 1
@@ -115,6 +121,7 @@ class V0Evaluator(BaseEvaluator):
                 else:
                     black_material += piece_value + piece_position
         material_difference = white_material - black_material
+
         # Bonus to winning advantage in endgame
         worse_material = min(white_material, black_material)
         if worse_material < 2:
@@ -132,10 +139,13 @@ class V0Evaluator(BaseEvaluator):
                 if black_material > white_material:
                     cutoff_result = - cutoff_result
                 return cutoff_result
+
         # Bonus for simplification while winning
-        percentage_left = (white_material + black_material) / 78.
-        offset = 1. - percentage_left
         if abs(material_difference) > 1.95:
+            percentage_left = (white_material + black_material) / 78.
+            offset = 1. - percentage_left
             if black_material > white_material:
                 offset = -offset
-        return material_difference + offset
+            material_difference += offset
+
+        return material_difference

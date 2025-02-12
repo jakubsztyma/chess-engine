@@ -45,7 +45,7 @@ class Game:
                 engine = self.black
 
             try:
-                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.2)).move
+                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
                 board.push(best_move)
             except Exception as ex:
                 print(ex)
@@ -53,7 +53,7 @@ class Game:
                 break
             node = node.add_variation(best_move)  # Add game node
 
-            if board.is_game_over(claim_draw=True):  # TODO how does claim_draw work exactly?
+            if board.is_game_over(claim_draw=True):
                 break
 
 
@@ -75,7 +75,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed)
 
 def play_game():
-    return Game(ABDepthPruningEngine(V0Evaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
+    return Game(ABDepthPruningEngine(V0Evaluator()), ABDepthPruningEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     elapsed = sum(gr.elapsed for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
-    # Best against AlphaBeta (time 0.2): Match result: 22.5 : 2.5, Elapsed: 443.1456003189087. Fullmoves: 1173. Time per move: 0.37778823556599206
+    # Best against AlphaBeta (time 0.3): Match result: 23.5 : 1.5, Elapsed: 746.3404989242554. Fullmoves: 1298. Time per move: 0.5749926802189949
 
     print(
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "

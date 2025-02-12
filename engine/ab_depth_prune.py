@@ -93,6 +93,11 @@ class ABDepthPruningEngine(BaseEngine):
 
     def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
         moves = list(self.get_legal_moves(board))
+        if depth == 1 and len(moves) > 10 and not board.is_check():
+            moves = [
+                move for move in moves
+                if board.piece_type_at(move.from_square) != PAWN or board.is_capture(move) # TODO or promotion
+            ]
         return moves
         # if depth != 2:
         #     return moves
