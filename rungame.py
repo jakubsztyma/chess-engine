@@ -9,7 +9,7 @@ import chess
 import chess.engine, chess.pgn
 import time
 
-from engine.ab_depth_prune import ABDepthPruningEngine
+from engine.ab_depth_prune import ABDeppeningEngine
 from engine.alpha_beta import AlphaBetaEngine
 from engine.base import RandomEngine
 from engine.minmax import MinMaxEngine
@@ -21,6 +21,7 @@ class GameResult:
     result: int
     fullmove_number: int
     elapsed: float
+    visited_nodes: int
 
 # Create a new chess board
 class Game:
@@ -45,7 +46,7 @@ class Game:
                 engine = self.black
 
             try:
-                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
+                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.1)).move
                 board.push(best_move)
             except Exception as ex:
                 print(ex)
@@ -72,10 +73,11 @@ class Game:
             case _:
                 result = 0.5
 
-        return GameResult(result, board.fullmove_number, elapsed)
+        visited_nodes = self.white.visited_nodes
+        return GameResult(result, board.fullmove_number, elapsed, visited_nodes)
 
 def play_game():
-    return Game(ABDepthPruningEngine(V0Evaluator()), ABDepthPruningEngine(BasicMaterialEvaluator())).play()
+    return Game(ABDeppeningEngine(V0Evaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -84,7 +86,7 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 25
+    GAMES_COUNT = 5
     white_result = 0
 
 
@@ -99,13 +101,16 @@ if __name__ == '__main__':
     white_result = sum(gr.result for gr in game_results)
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
+    visited_nodes = sum(gr.visited_nodes for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
     # Best against AlphaBeta (time 0.3): Match result: 23.5 : 1.5, Elapsed: 746.3404989242554. Fullmoves: 1298. Time per move: 0.5749926802189949
 
     print(
+          f"\n"
           f"Match result: {white_result} : {GAMES_COUNT - white_result}, "
           f"Elapsed: {elapsed}. "
           f"Fullmoves: {fullmove_number}. "
-          f"Time per move: {elapsed / fullmove_number}"
+          f"Time per move: {elapsed / fullmove_number}. "
+          f"Nodes per move: {visited_nodes / fullmove_number}. "
       )

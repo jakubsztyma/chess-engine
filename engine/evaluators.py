@@ -47,6 +47,10 @@ class V0Evaluator(BaseEvaluator):
         KING: 0,
     }
     def evaluate(self, board: Board) -> float:
+        if board.is_checkmate():
+            sign = 1 if board.turn else -1
+            return sign * MATE_EVALUATION
+
         evaluation = self._evaluate_material(board) + self._evaluate_position(board)
         # Add tiny random number to avoid having the same result for different positions
         return evaluation + random.uniform(0, 0.01)

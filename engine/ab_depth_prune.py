@@ -8,7 +8,7 @@ from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUAR
 from chess.engine import PlayResult, Limit
 
 
-class ABDepthPruningEngine(BaseEngine):
+class ABDeppeningEngine(BaseEngine):
     def play(self, board: Board, limit: Limit):
         is_white = board.turn
         anti_optimum = -math.inf if is_white else math.inf
@@ -53,15 +53,35 @@ class ABDepthPruningEngine(BaseEngine):
     def _play(self, *args, **kwargs):
         pass
 
+    def is_game_over(self, board: Board) -> bool:
+        """Faster version of board.is_game_over"""
+        # TODO faster versions of used functions (eg use already generated moves to check checkmate)?
+        # TODO add stalemate condition (reuse generate_legal_moves?)
+        # Normal game end.
+        if board.is_checkmate():
+            return True
+        if  not board.pawns | board.rooks | board.queens:
+            # Insufficient material (don't consider bishops and knights)
+            return True
+        if board.is_fifty_moves():
+            return True
+        if board.is_repetition(3):
+            return True
+
+        return False
+
 
     def find_move(self, board: Board, depth: int, alpha: float, beta: float):
+        self.visited_nodes += 1
         is_white = board.turn
         self.check_timeout()
-        if depth == 0:
-            return [None], self.evaluator.evaluate(board)
 
-        if board.is_game_over(claim_draw=True): # TODO claim draw to avoid repeating position
+        if depth == 0:
+            return [], self.evaluator.evaluate(board)
+
+        if self.is_game_over(board):
             return self._get_board_result(board, depth)
+
 
         best_line = None
         best_result = -math.inf if is_white else math.inf  # Anti-optimum

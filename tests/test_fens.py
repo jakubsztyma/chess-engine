@@ -2,7 +2,7 @@ import pytest
 from chess import Board
 from chess.engine import Limit
 
-from engine.ab_depth_prune import ABDepthPruningEngine
+from engine.ab_depth_prune import ABDeppeningEngine
 from engine.evaluators import V0Evaluator
 
 
@@ -30,7 +30,7 @@ from engine.evaluators import V0Evaluator
 def test_fen_response(fen: str, expected_response: str):
     board = Board(fen)
 
-    response = ABDepthPruningEngine(V0Evaluator()).play(board, Limit(time=0.5))
+    response = ABDeppeningEngine(V0Evaluator()).play(board, Limit(time=0.5))
 
     if isinstance(expected_response, str):
         assert response.move.uci() == expected_response

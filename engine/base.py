@@ -16,6 +16,7 @@ class BaseEngine(abc.ABC):
         self.max_depth = 12
         self.time = None
         self.start_time = None
+        self.visited_nodes = 0
 
     @abc.abstractmethod
     def _play(self, board: Board, depth: int, *args, **kwargs):
@@ -52,7 +53,7 @@ class BaseEngine(abc.ABC):
                 result_sign = 0
 
         # Mate evaluation decreases with depth (when depth parameter is lower)
-        return [None], result_sign * (MATE_EVALUATION + depth)
+        return [], result_sign * (MATE_EVALUATION + depth)
 
 
 class RandomEngine(BaseEngine):
