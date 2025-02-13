@@ -3,8 +3,8 @@ import time
 import math
 
 from engine.base import BaseEngine, ExpectedTimeoutException
-from engine.evaluators import V0Evaluator
-from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK
+from engine.evaluators import V0Evaluator, MATE_EVALUATION
+from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, Outcome, Termination
 from chess.engine import PlayResult, Limit
 
 
@@ -47,28 +47,31 @@ class ABDeppeningEngine(BaseEngine):
 
                     board.pop()
             except ExpectedTimeoutException:
+                self.achieved_depths.append(depth)
                 break
         return PlayResult(best_line[-1], None)
 
     def _play(self, *args, **kwargs):
         pass
 
-    def is_game_over(self, board: Board) -> bool:
+    def check_game_over(self, board: Board) -> int | None:
         """Faster version of board.is_game_over"""
         # TODO faster versions of used functions (eg use already generated moves to check checkmate)?
         # TODO add stalemate condition (reuse generate_legal_moves?)
         # Normal game end.
         if board.is_checkmate():
-            return True
-        if  not board.pawns | board.rooks | board.queens:
-            # Insufficient material (don't consider bishops and knights)
-            return True
-        if board.is_fifty_moves():
-            return True
-        if board.is_repetition(3):
-            return True
+            return 1 if not board.turn else -1
+        if board.pawns | board.rooks | board.queens == 0:
+            return 0
+        if not any(board.generate_legal_moves()):
+            return 0
 
-        return False
+        if board.is_fifty_moves():
+            return 0
+        if board.is_repetition(2):
+            return 0
+
+        return None
 
 
     def find_move(self, board: Board, depth: int, alpha: float, beta: float):
@@ -79,8 +82,9 @@ class ABDeppeningEngine(BaseEngine):
         if depth == 0:
             return [], self.evaluator.evaluate(board)
 
-        if self.is_game_over(board):
-            return self._get_board_result(board, depth)
+        game_over_result = self.check_game_over(board)
+        if game_over_result is not None:
+            return [], game_over_result * (MATE_EVALUATION + depth)
 
 
         best_line = None
@@ -113,10 +117,10 @@ class ABDeppeningEngine(BaseEngine):
 
     def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
         moves = list(self.get_legal_moves(board))
-        if depth == 1 and len(moves) > 10 and not board.is_check():
+        if depth == 1 and len(moves) > 20 and not board.is_check():
             moves = [
                 move for move in moves
-                if board.piece_type_at(move.from_square) != PAWN or board.is_capture(move) # TODO or promotion
+                if board.piece_type_at(move.from_square) != PAWN or move.promotion or board.is_capture(move)
             ]
         return moves
         # if depth != 2:

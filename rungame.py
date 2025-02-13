@@ -1,6 +1,7 @@
 """
 Example of use of GameSession and Engine to make Stockfish play itself.
 """
+import random
 from copy import deepcopy
 from dataclasses import dataclass
 from multiprocessing import Pool
@@ -22,6 +23,7 @@ class GameResult:
     fullmove_number: int
     elapsed: float
     visited_nodes: int
+    depth_sum: int
 
 # Create a new chess board
 class Game:
@@ -30,6 +32,7 @@ class Game:
         self.black = black
 
     def play(self):
+        random.seed(time.time()) # Necessary to avoid duplicating games in processes
         game = chess.pgn.Game()
         game.headers["White"] = str(self.white)
         game.headers["Black"] = str(self.black)
@@ -46,7 +49,7 @@ class Game:
                 engine = self.black
 
             try:
-                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.1)).move
+                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
                 board.push(best_move)
             except Exception as ex:
                 print(ex)
@@ -74,10 +77,11 @@ class Game:
                 result = 0.5
 
         visited_nodes = self.white.visited_nodes
-        return GameResult(result, board.fullmove_number, elapsed, visited_nodes)
+        depth_sum = sum(self.white.achieved_depths)
+        return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(ABDeppeningEngine(V0Evaluator()), AlphaBetaEngine(BasicMaterialEvaluator())).play()
+    return Game(ABDeppeningEngine(V0Evaluator()), AlphaBetaEngine(V0Evaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -86,7 +90,7 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 5
+    GAMES_COUNT = 100
     white_result = 0
 
 
@@ -102,9 +106,10 @@ if __name__ == '__main__':
     fullmove_number = sum(gr.fullmove_number for gr in game_results)
     elapsed = sum(gr.elapsed for gr in game_results)
     visited_nodes = sum(gr.visited_nodes for gr in game_results)
+    depth_sum = sum(gr.depth_sum for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
-    # Best against AlphaBeta (time 0.3): Match result: 23.5 : 1.5, Elapsed: 746.3404989242554. Fullmoves: 1298. Time per move: 0.5749926802189949
+    # Best against AlphaBeta (time 0.3): Match result: 91.0 : 9.0, Elapsed: 2615.0321934223175. Fullmoves: 4556. Time per move: 0.5739754594869002. Nodes per move: 11871.844600526778. Average depth: 4.783362598770852
 
     print(
           f"\n"
@@ -113,4 +118,5 @@ if __name__ == '__main__':
           f"Fullmoves: {fullmove_number}. "
           f"Time per move: {elapsed / fullmove_number}. "
           f"Nodes per move: {visited_nodes / fullmove_number}. "
+          f"Average depth: {depth_sum / fullmove_number}. "
       )

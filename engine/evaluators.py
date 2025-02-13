@@ -47,9 +47,10 @@ class V0Evaluator(BaseEvaluator):
         KING: 0,
     }
     def evaluate(self, board: Board) -> float:
-        if board.is_checkmate():
-            sign = 1 if board.turn else -1
-            return sign * MATE_EVALUATION
+        # TODO check for checkmate in an efficient way
+        # if board.is_checkmate():
+        #     sign = 1 if board.turn else -1
+        #     return sign * MATE_EVALUATION
 
         evaluation = self._evaluate_material(board) + self._evaluate_position(board)
         # Add tiny random number to avoid having the same result for different positions
@@ -144,12 +145,11 @@ class V0Evaluator(BaseEvaluator):
                     cutoff_result = - cutoff_result
                 return cutoff_result
 
-        # Bonus for simplification while winning
+        # Bonus for simplification
+        percentage_left = (white_material + black_material) / 78.
+        offset = 1. - percentage_left
         if abs(material_difference) > 1.95:
-            percentage_left = (white_material + black_material) / 78.
-            offset = 1. - percentage_left
             if black_material > white_material:
                 offset = -offset
-            material_difference += offset
 
-        return material_difference
+        return material_difference + offset
