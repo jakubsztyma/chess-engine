@@ -10,26 +10,39 @@ from chess.engine import PlayResult, Limit
 
 class ABDeppeningEngine(BaseEngine):
     def play(self, board: Board, limit: Limit):
-        is_white = board.turn
-        anti_optimum = -math.inf if is_white else math.inf
-
         self.start_time = time.time()
         self.time = limit.time
+        best_line, best_result = self.find_result(board, self.max_depth, master_alpha=-math.inf, master_beta=math.inf, is_top_level=True)
+        return PlayResult(best_line[-1], None)
+
+    def find_result(self, board: Board, max_depth: int, master_alpha: float, master_beta: float, is_top_level=False):
+        self.visited_nodes += 1
+        is_white = board.turn
+        anti_optimum = -math.inf if is_white else math.inf
+        self.check_timeout()
+
+        if max_depth == 0:
+            return [], self.evaluator.evaluate(board)
+
+        if not is_top_level:
+            game_over_result = self.check_game_over(board)
+            if game_over_result is not None:
+                return [], game_over_result * (MATE_EVALUATION + max_depth)
+
         best_line = None
+        best_result = anti_optimum
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves(board)]
-        for depth in range(1, self.max_depth + 1):
+        for depth in range(1, max_depth + 1):
+            alpha = master_alpha
+            beta = master_beta
+            best_result = anti_optimum
+            move_evaluation_map.sort(key=lambda it: it[0], reverse=is_white)
             try:
-                alpha = -math.inf
-                beta = math.inf
-
-                best_result = anti_optimum
-
-                move_evaluation_map.sort(key=lambda it: it[0], reverse=is_white)
                 for move_item in move_evaluation_map:
                     move = move_item[1]
                     board.push(move)
-                    line, evaluation = self.find_move(board, depth=depth - 1, alpha=alpha, beta=beta)
+                    line, evaluation = self.find_move(board, max_depth=depth - 1, master_alpha=alpha, master_beta=beta)
                     move_item[0] = evaluation
 
                     if is_white:
@@ -46,10 +59,16 @@ class ABDeppeningEngine(BaseEngine):
                         beta = min(beta, evaluation)
 
                     board.pop()
-            except ExpectedTimeoutException:
-                self.achieved_depths.append(depth)
-                break
-        return PlayResult(best_line[-1], None)
+
+                    if beta <= alpha:
+                        return best_line, best_result
+            except ExpectedTimeoutException as ex:
+                if is_top_level:
+                    self.achieved_depths.append(depth)
+                    break
+                else:
+                    raise ex
+        return best_line, best_result
 
     def _play(self, *args, **kwargs):
         pass
@@ -74,45 +93,62 @@ class ABDeppeningEngine(BaseEngine):
         return None
 
 
-    def find_move(self, board: Board, depth: int, alpha: float, beta: float):
+    def find_move(self, board: Board, max_depth: int, master_alpha: float, master_beta: float, is_top_level=False):
         self.visited_nodes += 1
         is_white = board.turn
+        anti_optimum = -math.inf if is_white else math.inf
         self.check_timeout()
 
-        if depth == 0:
+        if max_depth == 0:
             return [], self.evaluator.evaluate(board)
 
-        game_over_result = self.check_game_over(board)
-        if game_over_result is not None:
-            return [], game_over_result * (MATE_EVALUATION + depth)
-
+        if not is_top_level:
+            game_over_result = self.check_game_over(board)
+            if game_over_result is not None:
+                return [], game_over_result * (MATE_EVALUATION + max_depth)
 
         best_line = None
-        best_result = -math.inf if is_white else math.inf  # Anti-optimum
+        best_result = anti_optimum
 
-        for move in self.get_pruned_moves(board, depth=depth, alpha=alpha, beta=beta):
-            board.push(move)
+        move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves(board)]
+        depth = max_depth# TODO add loop here?
 
-            line, evaluation = self.find_move(board, depth=depth - 1, alpha=alpha, beta=beta)
+        master_alpha = master_alpha
+        master_beta = master_beta
+        best_result = anti_optimum
+        move_evaluation_map.sort(key=lambda it: it[0], reverse=is_white)
+        try:
+            for move_item in move_evaluation_map:
+                move = move_item[1]
+                board.push(move)
+                line, evaluation = self.find_move(board, max_depth=depth - 1, master_alpha=master_alpha, master_beta=master_beta)
+                move_item[0] = evaluation
 
-            if is_white:
-                if evaluation > best_result:
-                    best_result = evaluation
-                    line.append(move)
-                    best_line = line
-                alpha = max(alpha, evaluation)
+                if is_white:
+                    if evaluation > best_result:
+                        best_result = evaluation
+                        line.append(move)
+                        best_line = line
+                    master_alpha = max(master_alpha, evaluation)
+                else:
+                    if evaluation < best_result:
+                        best_result = evaluation
+                        line.append(move)
+                        best_line = line
+                    master_beta = min(master_beta, evaluation)
+
+                board.pop()
+
+                if master_beta <= master_alpha:
+                    return best_line, best_result
+
+        except ExpectedTimeoutException as ex:
+            if is_top_level:
+                pass
+                # self.achieved_depths.append(depth)
+                # break
             else:
-                if evaluation < best_result:
-                    best_result = evaluation
-                    line.append(move)
-                    best_line = line
-                beta = min(beta, evaluation)
-
-            board.pop()
-
-            if beta <= alpha:
-                break
-
+                raise ex
         return best_line, best_result
 
     def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
