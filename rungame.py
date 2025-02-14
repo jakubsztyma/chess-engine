@@ -90,7 +90,7 @@ if __name__ == '__main__':
     # engine_path = "/opt/homebrew/bin/stockfish"  # Update this path
     # stockfish = chess.engine.SimpleEngine.popen_uci(engine_path)
 
-    GAMES_COUNT = 10
+    GAMES_COUNT = 30
     white_result = 0
 
 
