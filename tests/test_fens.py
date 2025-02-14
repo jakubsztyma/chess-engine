@@ -3,6 +3,7 @@ from chess import Board
 from chess.engine import Limit
 
 from engine.ab_depth_prune import ABDeppeningEngine
+from engine.board import ExtendedBoard
 from engine.evaluators import V0Evaluator
 
 
@@ -28,7 +29,7 @@ from engine.evaluators import V0Evaluator
 
 ])
 def test_fen_response(fen: str, expected_response: str):
-    board = Board(fen)
+    board = ExtendedBoard(fen)
 
     response = ABDeppeningEngine(V0Evaluator()).play(board, Limit(time=0.5))
 

@@ -13,6 +13,7 @@ import time
 from engine.ab_depth_prune import ABDeppeningEngine
 from engine.alpha_beta import AlphaBetaEngine
 from engine.base import RandomEngine
+from engine.board import ExtendedBoard
 from engine.minmax import MinMaxEngine
 from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
 
@@ -38,7 +39,7 @@ class Game:
         game.headers["Black"] = str(self.black)
         node = game
 
-        board = chess.Board()
+        board = ExtendedBoard()
 
         start = time.time()
         while board.result() == "*":

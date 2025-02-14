@@ -18,6 +18,7 @@ class BaseEngine(abc.ABC):
         self.start_time = None
         self.visited_nodes = 0
         self.achieved_depths = []
+        self.board = None
 
     @abc.abstractmethod
     def _play(self, board: Board, depth: int, *args, **kwargs):
