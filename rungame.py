@@ -13,6 +13,7 @@ import time
 from engine.ab_depth_prune import ABDeppeningEngine
 from engine.alpha_beta import AlphaBetaEngine
 from engine.base import RandomEngine
+from engine.basilisk import BasiliskEngine
 from engine.board import ExtendedBoard
 from engine.minmax import MinMaxEngine
 from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
@@ -82,7 +83,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(ABDeppeningEngine(V0Evaluator()), AlphaBetaEngine(V0Evaluator())).play()
+    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     depth_sum = sum(gr.depth_sum for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
-    # Best against AlphaBeta (time 0.3): Match result: 91.0 : 9.0, Elapsed: 2615.0321934223175. Fullmoves: 4556. Time per move: 0.5739754594869002. Nodes per move: 11871.844600526778. Average depth: 4.783362598770852
+    # Best against AlphaBeta (time 0.3): Match result: 94.0 : 6.0, Elapsed: 2281.0306215286255. Fullmoves: 3981. Time per move: 0.5729793070908379. Nodes per move: 10764.485556392867. Average depth: 4.687766892740518.
 
 
     print(
