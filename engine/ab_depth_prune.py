@@ -57,7 +57,8 @@ class ABDeppeningEngine(BaseEngine):
         best_result = anti_optimum
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves(board)]
-        for depth in range(1, max_depth + 1):
+        min_depth = 2 if is_top_level else max_depth
+        for depth in range(min_depth, max_depth + 1):
             alpha = master_alpha
             beta = master_beta
             best_result = anti_optimum
@@ -98,39 +99,10 @@ class ABDeppeningEngine(BaseEngine):
                     raise ex
         return best_line, best_result
 
-    def get_pruned_moves(self, board: Board, depth: int, alpha: float, beta: float) -> list:
-        moves = list(self.get_legal_moves(board))
-        if depth == 1 and len(moves) > 20 and not board.is_check():
-            moves = [
-                move for move in moves
-                if board.piece_type_at(move.from_square) != PAWN or move.promotion or board.is_capture(move)
-            ]
-        return moves
-        # if depth != 2:
-        #     return moves
-        #
-        # priority_bonus_step = 0.1 if board.turn else -0.1 # TODO explain
-        # moves_with_evaluation = []
-        # for i, move in enumerate(moves):
-        #     priority_bonus = (len(moves) - i) * priority_bonus_step
-        #     board.push(move)
-        #     evaluation = self.evaluator.evaluate(board)
-        #     moves_with_evaluation.append((move, evaluation + priority_bonus))
-        #     board.pop()
-        #
-        # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
-        # moves_sorted = [move for move, _ in moves_with_evaluation]
-        # return moves_sorted[:1 + math.ceil(len(moves_sorted) * 0.75)] # Prune worst moves # TODO try with other rules
 
     def get_legal_moves(self, board: Board) -> list:
         moves = list(board.legal_moves)
-        # FIXME Shuffle piece moves in a smarter way
-        # FIXME find a way to promote pawn moves in endgame and opening -- position evaluation?
         # # Shuffle piece moves to try different piece types equally
-        # piece_moves = [m for m in moves if PAWN != board.piece_type_at(m.from_square)]
-        # random.shuffle(piece_moves)
-        # pawn_moves = [m for m in moves if PAWN == board.piece_type_at(m.from_square)] # TODO
-        # moves = piece_moves + pawn_moves
         piece_order = {
             BISHOP:4,
             KNIGHT:4,
@@ -152,7 +124,7 @@ class ABDeppeningEngine(BaseEngine):
         for i, move in enumerate(moves):
             is_castling = board.is_castling(move)
             capture_value = V0Evaluator.VALUE_DICT.get(board.piece_type_at(move.to_square), 0)
-            if board.fullmove_number > 50: # Better endgame rule
+            if board.fullmove_number > 50: # TODO Better endgame rule
                 piece_order_value = piece_order_endgame.get(board.piece_type_at(move.from_square))
             else:
                 piece_order_value = piece_order.get(board.piece_type_at(move.from_square))
@@ -162,18 +134,3 @@ class ABDeppeningEngine(BaseEngine):
 
         evaluated_moves.sort(reverse=True)
         return [e[-1] for e in evaluated_moves]
-
-    # TODO restore after finding the better sorting algo than the default
-    # random.shuffle(legal_moves) # Shuffle the moves to avoid moving the same piece # TODO restore? Only to extent?
-    # if depth <= 1:
-    #     return legal_moves
-    #
-    # moves_with_evaluation = []
-    # for move in legal_moves:
-    #     board.push(move)
-    #     evaluation = self.evaluator.evaluate(board)
-    #     moves_with_evaluation.append((move, evaluation))
-    #     board.pop()
-    #
-    # moves_with_evaluation.sort(key=lambda m_e: m_e[1], reverse=not bool(board.turn))
-    # return [move for move, _ in moves_with_evaluation]
