@@ -65,7 +65,8 @@ class V0Evaluator(BaseEvaluator):
 
     def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, color):
         is_endgame = board.fullmove_number > 60
-        row, column  = divmod(square, 8)
+        row = square // 8
+        column = square & 8
         row_center_distance = abs(row - 3.5)
         column_center_distance = abs(column - 3.5)
         # Pawn and piece position
@@ -117,7 +118,7 @@ class V0Evaluator(BaseEvaluator):
         # Calculate material
         for square, piece in board.pieces_map.items():
             piece_type = abs(piece)
-            color = WHITE if piece > 0 else BLACK
+            color = piece > 0 # WHITE if True
 
             piece_value = self.VALUE_DICT[piece_type]
             piece_position = self._evaluate_piece_position(board, piece_type, square, color)

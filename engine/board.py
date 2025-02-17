@@ -19,22 +19,37 @@ class ExtendedBoard(Board):
 
     def push(self, move: Move):
         is_en_passant = self.is_en_passant(move)
+        is_castling = self.is_castling(move)
+        for key, value in self.pieces_map.items():
+            correct = self.piece_type_at(key)
+            if not correct == abs(value):
+                raise Exception("Here ", is_en_passant, move.from_square, move.to_square, key, correct, value, self.pieces_map)
         super().push(move)
-
-        del self.pieces_map[move.from_square]
-        self._assign_piece(move.to_square)
 
         if is_en_passant:
             # En passant
             column = move.to_square % 8
             row = move.from_square // 8
-            del self.pieces_map[8 * row + column]
+            self.pieces_map.pop(8 * row + column)
+        if is_castling:
+            # TODO optimize
+            self._assign_piece(0)
+            self._assign_piece(3)
+            self._assign_piece(5)
+            self._assign_piece(7)
+            self._assign_piece(56)
+            self._assign_piece(59)
+            self._assign_piece(63)
+            self._assign_piece(61)
+
+        self.pieces_map.pop(move.from_square)
+        self._assign_piece(move.to_square)
 
 
     def pop(self):
         move = super().pop()
         is_en_passant = self.is_en_passant(move)
-
+        is_castling = self.is_castling(move)
         self._assign_piece(move.from_square)
         self._assign_piece(move.to_square)
 
@@ -44,6 +59,17 @@ class ExtendedBoard(Board):
             row = move.from_square // 8
             capture_square = 8 * row + column
             self._assign_piece(capture_square)
+
+        if is_castling:
+            # TODO optimize
+            self._assign_piece(0)
+            self._assign_piece(3)
+            self._assign_piece(5)
+            self._assign_piece(7)
+            self._assign_piece(56)
+            self._assign_piece(59)
+            self._assign_piece(63)
+            self._assign_piece(61)
         return move
 
     def _assign_piece(self, square):
@@ -52,7 +78,7 @@ class ExtendedBoard(Board):
             sign = (1 if piece_at.color else -1)
             self.pieces_map[square] = sign * piece_at.piece_type
         else:
-            del self.pieces_map[square]
+            self.pieces_map.pop(square,  None)
 
     def check_game_over(self) -> int | None:
         """Faster version of board.is_game_over"""

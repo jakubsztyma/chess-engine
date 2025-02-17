@@ -51,13 +51,8 @@ class Game:
             else:
                 engine = self.black
 
-            try:
-                best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
-                board.push(best_move)
-            except Exception as ex:
-                print(ex)
-                print(game)
-                break
+            best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
+            board.push(best_move)
             node = node.add_variation(best_move)  # Add game node
 
             if board.is_game_over(claim_draw=True):
@@ -84,7 +79,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(BasicMaterialEvaluator())).play()
+    return Game(BasiliskEngine(V0Evaluator()), ABDeppeningEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
