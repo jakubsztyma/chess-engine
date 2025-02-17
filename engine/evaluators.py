@@ -47,6 +47,7 @@ class V0Evaluator(BaseEvaluator):
         ROOK: 5,
         QUEEN: 9,
         KING: 0,
+        0: 0,
     }
     def evaluate(self, board: ExtendedBoard) -> float:
         # TODO check for checkmate in an efficient way
@@ -66,7 +67,7 @@ class V0Evaluator(BaseEvaluator):
     def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, color):
         is_endgame = board.fullmove_number > 60
         row = square // 8
-        column = square & 8
+        column = square % 8
         row_center_distance = abs(row - 3.5)
         column_center_distance = abs(column - 3.5)
         # Pawn and piece position

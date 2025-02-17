@@ -41,7 +41,7 @@ class Game:
         game.headers["Black"] = str(self.black)
         node = game
 
-        board = ExtendedBoard()
+        board = chess.Board()
 
         start = time.time()
         while board.result() == "*":
@@ -79,7 +79,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V0Evaluator()), ABDeppeningEngine(BasicMaterialEvaluator())).play()
+    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine

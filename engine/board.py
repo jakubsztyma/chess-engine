@@ -20,10 +20,6 @@ class ExtendedBoard(Board):
     def push(self, move: Move):
         is_en_passant = self.is_en_passant(move)
         is_castling = self.is_castling(move)
-        for key, value in self.pieces_map.items():
-            correct = self.piece_type_at(key)
-            if not correct == abs(value):
-                raise Exception("Here ", is_en_passant, move.from_square, move.to_square, key, correct, value, self.pieces_map)
         super().push(move)
 
         if is_en_passant:
@@ -39,8 +35,8 @@ class ExtendedBoard(Board):
             self._assign_piece(7)
             self._assign_piece(56)
             self._assign_piece(59)
-            self._assign_piece(63)
             self._assign_piece(61)
+            self._assign_piece(63)
 
         self.pieces_map.pop(move.from_square)
         self._assign_piece(move.to_square)
@@ -68,8 +64,8 @@ class ExtendedBoard(Board):
             self._assign_piece(7)
             self._assign_piece(56)
             self._assign_piece(59)
-            self._assign_piece(63)
             self._assign_piece(61)
+            self._assign_piece(63)
         return move
 
     def _assign_piece(self, square):
