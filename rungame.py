@@ -1,6 +1,7 @@
 """
 Example of use of GameSession and Engine to make Stockfish play itself.
 """
+import os
 import random
 from copy import deepcopy
 from dataclasses import dataclass
@@ -34,7 +35,7 @@ class Game:
         self.black = black
 
     def play(self):
-        random.seed(time.time()) # Necessary to avoid duplicating games in processes
+        random.seed(time.time() + os.getpid()) # Necessary to avoid duplicating games in processes
         game = chess.pgn.Game()
         game.headers["White"] = str(self.white)
         game.headers["Black"] = str(self.black)
@@ -83,7 +84,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play()
+    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine

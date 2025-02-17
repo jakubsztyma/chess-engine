@@ -3,6 +3,7 @@ from chess import Board
 from chess.engine import Limit
 
 from engine.ab_depth_prune import ABDeppeningEngine
+from engine.basilisk import BasiliskEngine
 from engine.board import ExtendedBoard
 from engine.evaluators import V0Evaluator
 
@@ -22,6 +23,7 @@ from engine.evaluators import V0Evaluator
     # Endgame simplification
     ("7r/4P3/1pn5/p1p2kB1/8/2P3K1/PPP5/4R3 w - - 2 34", ("e7e8q", "e7e8r", "e7e8b", "e7e8n")),
     ("r1b5/pp1p4/5P2/2p5/5kPr/1P6/PRPP1P1P/4R1K1 w - - 1 28", ("f6f7",)),
+    ("8/8/2K5/pP6/8/8/8/7k w - a6 0 2", "b5a6"),
     # Defend against mate
     ("r5k1/p4ppr/2n5/1N4p1/4P3/3PQPPb/PqP4P/R3R1K1 w - - 0 25", ("a1b1", "a2a4", "b5c7", "b5d6")),
     # Tactical
@@ -31,7 +33,7 @@ from engine.evaluators import V0Evaluator
 def test_fen_response(fen: str, expected_response: str):
     board = ExtendedBoard(fen)
 
-    response = ABDeppeningEngine(V0Evaluator()).play(board, Limit(time=0.5))
+    response = BasiliskEngine(V0Evaluator()).play(board, Limit(time=0.5))
 
     if isinstance(expected_response, str):
         assert response.move.uci() == expected_response

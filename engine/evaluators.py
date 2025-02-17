@@ -3,6 +3,8 @@ import random
 
 from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, lsb
 
+from engine.board import ExtendedBoard
+
 MATE_EVALUATION = 1000
 
 
@@ -46,7 +48,7 @@ class V0Evaluator(BaseEvaluator):
         QUEEN: 9,
         KING: 0,
     }
-    def evaluate(self, board: Board) -> float:
+    def evaluate(self, board: ExtendedBoard) -> float:
         # TODO check for checkmate in an efficient way
         # if board.is_checkmate():
         #     sign = 1 if board.turn else -1
@@ -56,12 +58,12 @@ class V0Evaluator(BaseEvaluator):
         # Add tiny random number to avoid having the same result for different positions
         return evaluation + random.uniform(0, 0.01)
 
-    def _evaluate_position(self, board: Board) -> float:
+    def _evaluate_position(self, board: ExtendedBoard) -> float:
         evaluation = 0.
         evaluation += self._evaluate_checks(board)
         return evaluation
 
-    def _evaluate_piece_position(self, board, piece_type, square, color):
+    def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, color):
         is_endgame = board.fullmove_number > 60
         row, column  = divmod(square, 8)
         row_center_distance = abs(row - 3.5)
@@ -103,28 +105,26 @@ class V0Evaluator(BaseEvaluator):
 
         return 0.
 
-    def _evaluate_checks(self, board: Board) -> float:
+    def _evaluate_checks(self, board: ExtendedBoard) -> float:
         turn_sign = -1 if board.turn else 1
         if board.is_check():
             # Being in check makes evaluation worse
             return turn_sign * 0.2
         return 0.
 
-    def _evaluate_material(self, board: Board) -> float:
+    def _evaluate_material(self, board: ExtendedBoard) -> float:
         white_material = black_material = 0
         # Calculate material
-        for square in SQUARES_180:
-            piece_type = board.piece_type_at(square)
-            if piece_type:
-                mask = BB_SQUARES[square]
-                color = bool(board.occupied_co[WHITE] & mask)
+        for square, piece in board.pieces.items():
+            piece_type = abs(piece)
+            color = WHITE if piece > 0 else BLACK
 
-                piece_value = self.VALUE_DICT[piece_type]
-                piece_position = self._evaluate_piece_position(board, piece_type, square, color)
-                if color == WHITE:
-                    white_material += piece_value + piece_position
-                else:
-                    black_material += piece_value + piece_position
+            piece_value = self.VALUE_DICT[piece_type]
+            piece_position = self._evaluate_piece_position(board, piece_type, square, color)
+            if color == WHITE:
+                white_material += piece_value + piece_position
+            else:
+                black_material += piece_value + piece_position
         material_difference = white_material - black_material
 
         # Bonus to winning advantage in endgame

@@ -13,7 +13,7 @@ class BasiliskEngine(BaseEngine):
     def play(self, board: ExtendedBoard, limit: Limit):
         self.start_time = time.time()
         self.time = limit.time
-        self.board = board
+        self.board = ExtendedBoard(board.fen())
         best_line, best_result = self.find_move(self.max_depth, master_alpha=-math.inf, master_beta=math.inf, is_top_level=True)
         return PlayResult(best_line[-1], None)
 
