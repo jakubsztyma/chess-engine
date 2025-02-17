@@ -1,5 +1,5 @@
 import pytest
-from chess import Board
+from chess import Board, Move
 from chess.engine import Limit
 
 from engine.ab_depth_prune import ABDeppeningEngine
@@ -39,3 +39,19 @@ def test_fen_response(fen: str, expected_response: str):
         assert response.move.uci() == expected_response
     else:
         assert response.move.uci() in expected_response
+@pytest.mark.parametrize("fen, move", [
+    ("4k3/1R4p1/3KP2p/p7/8/6r1/PP6/8 w - - 1 2", "b7b8"),
+    ("2R5/5ppk/7p/p2P4/4P3/2P1n1B1/r6P/7K b - - 1 1", "a2a1"),
+    ("2Q1R3/5pkp/1r2p1p1/p7/8/4PB2/P4PPP/6K1 b - - 0 1", "b6b1"),
+    ("5k2/2N2p2/2B2P2/5q2/2b5/2P1KP2/1P4rP/R2Q3R b - - 0 29", "f5e5"),
+    ("8/8/2K5/pP6/8/8/8/7k w - a6 0 2", "b5a6"),
+
+])
+def test_board_apply(fen:str, move: str):
+    board = ExtendedBoard(fen)
+    original_pieces = board.pieces_map.copy()
+
+    with board.apply(Move.from_uci(move)):
+        pass
+
+    assert board.pieces_map == original_pieces

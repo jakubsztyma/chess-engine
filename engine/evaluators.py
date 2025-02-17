@@ -115,7 +115,7 @@ class V0Evaluator(BaseEvaluator):
     def _evaluate_material(self, board: ExtendedBoard) -> float:
         white_material = black_material = 0
         # Calculate material
-        for square, piece in board.pieces.items():
+        for square, piece in board.pieces_map.items():
             piece_type = abs(piece)
             color = WHITE if piece > 0 else BLACK
 
