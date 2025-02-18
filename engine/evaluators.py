@@ -40,6 +40,12 @@ class BasicMaterialEvaluator(BaseEvaluator):
 
 
 class V0Evaluator(BaseEvaluator):
+    pawn_advance_coefficient = 0.03
+    piece_centralized_coefficient = 0.015
+    king_coefficient = 0.01
+    queen_coefficient = 0.03
+    rook_active_coefficient = 0.02
+    centeral_columns = (3, 4)
     VALUE_DICT = {
         PAWN: 1,
         KNIGHT: 3,
@@ -68,42 +74,38 @@ class V0Evaluator(BaseEvaluator):
         is_endgame = board.fullmove_number > 60
         row = square // 8
         column = square % 8
-        row_center_distance = abs(row - 3.5)
-        column_center_distance = abs(column - 3.5)
         # Pawn and piece position
         if piece_type  == PAWN:
             # Bonus on advanced pieces
-            pawn_advance_coefficient = 0.03
-            if column in (3, 4) or is_endgame: # Central in middlegame, all in endgame
+            if column in self.centeral_columns or is_endgame: # Central in middlegame, all in endgame
                 if color == BLACK:
                     row = (7-row)
-                return pawn_advance_coefficient * row
-        elif piece_type in (KNIGHT, BISHOP):
+                return self.pawn_advance_coefficient * row
+
+        row_center_distance = row - 3.5 if row > 3.5 else 3.5 - row # Faster than abs()
+        column_center_distance = column - 3.5 if column > 3.5 else 3.5 - column # Faster than abs()
+        if piece_type in (KNIGHT, BISHOP):
             # Bonus on centralized pieces (in extended center)
-            piece_centralized_coefficient = 0.015
             if row < 2 or row > 5 or column < 2 or row > 5:
                 piece_center_distance = row_center_distance + column_center_distance
-                return -piece_centralized_coefficient * piece_center_distance
-        elif piece_type == ROOK:
+                return -self.piece_centralized_coefficient * piece_center_distance
+        if piece_type == ROOK:
             # Move to center columns but avoid center rows
-            rook_active_coefficient = 0.02
-            return rook_active_coefficient * (row_center_distance - column_center_distance)
-        elif piece_type == KING:
+            return self.rook_active_coefficient * (row_center_distance - column_center_distance)
+        if piece_type == KING:
             # King position
-            king_coefficient = 0.01
             sign = 1
             king_center_distance = row_center_distance + column_center_distance  # TODO what distance works best
             if is_endgame:  # TODO better condition
                 # Centralized king is good in endgame
                 sign *= -1
-            return king_coefficient * sign * king_center_distance  # TODO find coefficient
-        elif piece_type == QUEEN:
+            return self.king_coefficient * sign * king_center_distance  # TODO find coefficient
+        if piece_type == QUEEN:
             if not is_endgame:
-                queen_coefficient = 0.03
                 if color == BLACK:
                     row = (7 - row)
                 row_second_rank_distance = abs(1 - row)
-                return queen_coefficient * (column_center_distance + row_second_rank_distance)
+                return self.queen_coefficient * (column_center_distance + row_second_rank_distance)
 
         return 0.
 

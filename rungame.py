@@ -34,7 +34,7 @@ class Game:
         self.white = white
         self.black = black
 
-    def play(self):
+    def play(self, time_limit=0.3, move_limit: int=None):
         random.seed(time.time() + os.getpid()) # Necessary to avoid duplicating games in processes
         game = chess.pgn.Game()
         game.headers["White"] = str(self.white)
@@ -46,12 +46,15 @@ class Game:
         start = time.time()
         while board.result() == "*":
             # Get the best move from the engine
+            if move_limit and board.fullmove_number > move_limit:
+                break
+
             if board.turn:
                 engine = self.white
             else:
                 engine = self.black
 
-            best_move = engine.play(deepcopy(board), chess.engine.Limit(time=0.3)).move
+            best_move = engine.play(deepcopy(board), chess.engine.Limit(time=time_limit)).move
             board.push(best_move)
             node = node.add_variation(best_move)  # Add game node
 

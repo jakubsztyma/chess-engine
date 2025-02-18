@@ -1,17 +1,17 @@
 import cProfile
 import pstats
 
-from rungame import play_game
+from engine.basilisk import BasiliskEngine
+from engine.evaluators import V0Evaluator
+from rungame import Game
 
-# _evaluate_material = 2.858 / 24.461
-# piece_type_at = 3.486 / 24.461
-# get_legal_moves = 10.616 - 7.902 / 38.135
-# get_legal_moves = 7.888 - 5.615 / 27.617
+# _evaluate_piece_position = 2.449
+# get_legal_moves = 5.337 - 4.266
 
 
 if __name__ == '__main__':
     with cProfile.Profile() as pr:
-        play_game()
+        Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play(time_limit=1., move_limit=10)
 
         ps = pstats.Stats(pr).sort_stats(pstats.SortKey.CUMULATIVE)
         ps.print_stats()

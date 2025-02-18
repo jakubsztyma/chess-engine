@@ -68,11 +68,10 @@ class ExtendedBoard(Board):
             self._assign_piece(63)
         return move
 
-    def _assign_piece(self, square):
+    def _assign_piece(self, square: int):
         piece_at = self.piece_at(square)
         if piece_at:
-            sign = (1 if piece_at.color else -1)
-            self.pieces_map[square] = sign * piece_at.piece_type
+            self.pieces_map[square] = piece_at.piece_type
         else:
             self.pieces_map.pop(square,  None)
 

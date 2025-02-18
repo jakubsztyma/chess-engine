@@ -99,14 +99,16 @@ class BasiliskEngine(BaseEngine):
 
 
     def get_legal_moves(self) -> list:
+        if self.board.fullmove_number > 50:  # TODO Better endgame rule
+            order_dict = PIECE_ORDER_ENDGAME
+        else:
+            order_dict = PIECE_ORDER
+
         evaluated_moves = []
         for i, move in enumerate(self.board.legal_moves):
-            is_castling = self.board.is_castling(move)
-            capture_value = V0Evaluator.VALUE_DICT[abs(self.board.pieces_map.get(move.to_square, 0))]
-            if self.board.fullmove_number > 50: # TODO Better endgame rule
-                piece_order_value = PIECE_ORDER_ENDGAME.get(abs(self.board.pieces_map.get(move.from_square, 0)))
-            else:
-                piece_order_value = PIECE_ORDER.get(abs(self.board.pieces_map.get(move.from_square, 0)))
+            is_castling = self.board.is_castling(move) if move.from_square in (5, 60) else False
+            capture_value = V0Evaluator.VALUE_DICT[self.board.pieces_map.get(move.to_square, 0)]
+            piece_order_value = order_dict[self.board.pieces_map[move.from_square]]
             evaluated_moves.append((is_castling, capture_value, piece_order_value, -i, move))
 
 
