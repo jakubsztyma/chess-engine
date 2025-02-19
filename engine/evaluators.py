@@ -75,7 +75,7 @@ class V0Evaluator(BaseEvaluator):
         row = square // 8
         column = square % 8
         # Pawn and piece position
-        if piece_type  == PAWN:
+        if piece_type == PAWN:
             # Bonus on advanced pieces
             if column in self.centeral_columns or is_endgame: # Central in middlegame, all in endgame
                 if color == BLACK:
@@ -119,22 +119,20 @@ class V0Evaluator(BaseEvaluator):
     def _evaluate_material(self, board: ExtendedBoard) -> float:
         white_material = black_material = 0
         # Calculate material
-        for square, piece in board.pieces_map.items():
-            piece_type = abs(piece)
-            color = piece > 0 # WHITE if True
+        for square, piece_type in board.pieces_map.items():
+            color = bool(board.occupied_co[WHITE] & BB_SQUARES[square])
 
-            piece_value = self.VALUE_DICT[piece_type]
             piece_position = self._evaluate_piece_position(board, piece_type, square, color)
+            piece_value = self.VALUE_DICT[piece_type] + piece_position
             if color == WHITE:
-                white_material += piece_value + piece_position
+                white_material += piece_value
             else:
-                black_material += piece_value + piece_position
-        material_difference = white_material - black_material
+                black_material += piece_value
 
         # Bonus to winning advantage in endgame
-        worse_material = min(white_material, black_material)
+        worse_material = white_material if white_material < black_material else black_material
         if worse_material < 2:
-            better_material = max(white_material, black_material)
+            better_material = white_material if white_material > black_material else black_material
             cutoff_result = None
             if worse_material == 0:
                 if better_material >= 6.5:
@@ -150,10 +148,12 @@ class V0Evaluator(BaseEvaluator):
                 return cutoff_result
 
         # Bonus for simplification
-        percentage_left = (white_material + black_material) / 78.
-        offset = 1. - percentage_left
-        if abs(material_difference) > 1.95:
-            if black_material > white_material:
-                offset = -offset
+        material_difference = white_material - black_material
+        if material_difference > 1.95 or material_difference < -1.95:
+            percentage_left = (white_material + black_material) / 78.
+            if white_material > black_material:
+                material_difference += percentage_left
+            else:
+                material_difference -= percentage_left
 
-        return material_difference + offset
+        return material_difference

@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from chess import Board, Move, scan_reversed, BB_SQUARES, PAWN
+from chess import Board, Move, scan_reversed, BB_SQUARES, PAWN, square_file
 
 class ExtendedBoard(Board):
     def __init__(self, *args, **kwargs):
@@ -17,16 +17,18 @@ class ExtendedBoard(Board):
         finally:
             self.pop()
 
+    def is_castling(self, move: Move) -> bool:
+        if move.from_square in (4, 60):
+            if self.kings & BB_SQUARES[move.from_square]:
+                column_diff = (move.from_square - move.to_square) & 7
+                return column_diff < -1 or 1 < column_diff
+        return False
+
     def push(self, move: Move):
         is_en_passant = self.is_en_passant(move)
         is_castling = self.is_castling(move)
         super().push(move)
 
-        if is_en_passant:
-            # En passant
-            column = move.to_square % 8
-            row = move.from_square // 8
-            self.pieces_map.pop(8 * row + column)
         if is_castling:
             # TODO optimize
             self._assign_piece(0)
@@ -38,25 +40,29 @@ class ExtendedBoard(Board):
             self._assign_piece(61)
             self._assign_piece(63)
 
-        self.pieces_map.pop(move.from_square)
-        self._assign_piece(move.to_square)
+        if is_en_passant:
+            # En passant
+            column = move.to_square % 8
+            row = move.from_square // 8
+            del self.pieces_map[8 * row + column]
+
+        piece = self.pieces_map.pop(move.from_square)
+        self.pieces_map[move.to_square] = piece
 
 
     def pop(self):
         move = super().pop()
-        is_en_passant = self.is_en_passant(move)
-        is_castling = self.is_castling(move)
-        self._assign_piece(move.from_square)
+        piece_type = self.pieces_map.pop(move.to_square)
+        self.pieces_map[move.from_square] = piece_type
         self._assign_piece(move.to_square)
 
-        if is_en_passant:
+        if  self.is_en_passant(move):
             # En passant
             column = move.to_square % 8
             row = move.from_square // 8
             capture_square = 8 * row + column
             self._assign_piece(capture_square)
-
-        if is_castling:
+        elif self.is_castling(move):
             # TODO optimize
             self._assign_piece(0)
             self._assign_piece(3)
@@ -69,9 +75,9 @@ class ExtendedBoard(Board):
         return move
 
     def _assign_piece(self, square: int):
-        piece_at = self.piece_at(square)
-        if piece_at:
-            self.pieces_map[square] = piece_at.piece_type
+        piece_type_at = self.piece_type_at(square)
+        if piece_type_at:
+            self.pieces_map[square] = piece_type_at
         else:
             self.pieces_map.pop(square,  None)
 

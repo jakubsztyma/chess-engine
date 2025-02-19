@@ -82,7 +82,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play()
+    return Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(BasicMaterialEvaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -111,6 +111,7 @@ if __name__ == '__main__':
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
     # Best against AlphaBeta (time 0.3): Match result: 94.0 : 6.0, Elapsed: 2281.0306215286255. Fullmoves: 3981. Time per move: 0.5729793070908379. Nodes per move: 10764.485556392867. Average depth: 4.687766892740518.
+    # Best against ABD (time 0.3): Match result: 66.0 : 34.0, Elapsed: 2567.9087285995483. Fullmoves: 4493. Time per move: 0.5715354392609723. Nodes per move: 11354.362341419986. Average depth: 4.586245270420655
 
 
     print(
