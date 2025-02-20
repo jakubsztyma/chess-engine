@@ -8,6 +8,22 @@ from engine.evaluators import V0Evaluator, MATE_EVALUATION
 from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, Outcome, Termination
 from chess.engine import PlayResult, Limit
 
+PIECE_ORDER = {
+    BISHOP: 4,
+    KNIGHT: 4,
+    PAWN: 3,
+    QUEEN: 2,
+    ROOK: 1,
+    KING: 0,
+}
+PIECE_ORDER_ENDGAME = {
+    QUEEN: 6,
+    PAWN: 5,
+    ROOK: 4,
+    KING: 3,
+    BISHOP: 2,
+    KNIGHT: 1,
+}
 
 class BasiliskEngine(BaseEngine):
     def play(self, board: ExtendedBoard, limit: Limit):
@@ -83,36 +99,19 @@ class BasiliskEngine(BaseEngine):
 
 
     def get_legal_moves(self) -> list:
-        moves = list(self.board.legal_moves)
         # # Shuffle piece moves to try different piece types equally
-        piece_order = {
-            BISHOP:4,
-            KNIGHT:4,
-            PAWN: 3,
-            QUEEN: 2,
-            ROOK: 1,
-            KING: 0,
-        }
-        piece_order_endgame = {
-            QUEEN:6,
-            PAWN: 5,
-            ROOK: 4,
-            KING: 3,
-            BISHOP: 2,
-            KNIGHT: 1,
-        }
+        if self.board.fullmove_number > 50:  # TODO Better endgame rule
+            piece_order = PIECE_ORDER_ENDGAME
+        else:
+            piece_order = PIECE_ORDER
 
         evaluated_moves = []
-        for i, move in enumerate(moves):
+        for i, move in enumerate(self.board.legal_moves):
             is_castling = self.board.is_castling(move)
             capture_value = V0Evaluator.VALUE_DICT.get(self.board.piece_type_at(move.to_square), 0)
-            if self.board.fullmove_number > 50: # TODO Better endgame rule
-                piece_order_value = piece_order_endgame.get(self.board.piece_type_at(move.from_square))
-            else:
-                piece_order_value = piece_order.get(self.board.piece_type_at(move.from_square))
-            move_order = len(moves) - i
-            evaluated_moves.append((is_castling, capture_value, piece_order_value, move_order, move))
+            piece_order_value = piece_order.get(self.board.piece_type_at(move.from_square))
+            evaluated_moves.append((is_castling, capture_value, piece_order_value, -i, move))
 
 
         evaluated_moves.sort(reverse=True)
-        return [e[-1] for e in evaluated_moves]
+        yield from (e[-1] for e in evaluated_moves)
