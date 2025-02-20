@@ -39,13 +39,34 @@ class BasicMaterialEvaluator(BaseEvaluator):
         return evaluation
 
 
+PAWN_ADVANCE_COEFFICIENT = 0.03
+PIECE_CENTRALIZED_COEFFICIENT = -0.015
+ROOK_ACTIVE_COEFFICIENT = 0.02
+KING_COEFFICIENT = 0.01
+QUEEN_COEFFICIENT = 0.03
+CENTRAL_COLUMNS = (3, 4)
+PAWN_POSITION_EVALUATION = tuple(
+    PAWN_ADVANCE_COEFFICIENT * row if column in CENTRAL_COLUMNS else 0
+    for row in range(8) for column in range(8)
+)
+PIECE_POSITION_EVALUATION = tuple(
+    PIECE_CENTRALIZED_COEFFICIENT * (abs(3.5 - row) + abs(3.5 - column)) if row < 2 or row > 5 or column < 2 or row > 5 else 0
+    for row in range(8) for column in range(8)
+)
+ROOK_POSITION_EVALUATION = tuple(
+    ROOK_ACTIVE_COEFFICIENT * (abs(3.5 - row) - abs(3.5 - column))
+    for row in range(8) for column in range(8)
+)
+KING_POSITION_EVALUATION = tuple(
+    KING_COEFFICIENT * (abs(3.5 - row) + abs(3.5 - column))
+    for row in range(8) for column in range(8)
+)
+QUEEN_POSITION_EVALUATION = tuple(
+    QUEEN_COEFFICIENT * (abs(1 - row) + abs(3.5 - column))
+    for row in range(8) for column in range(8)
+)
+
 class V0Evaluator(BaseEvaluator):
-    pawn_advance_coefficient = 0.03
-    piece_centralized_coefficient = 0.015
-    king_coefficient = 0.01
-    queen_coefficient = 0.03
-    rook_active_coefficient = 0.02
-    centeral_columns = (3, 4)
     VALUE_DICT = {
         PAWN: 1,
         KNIGHT: 3,
@@ -72,42 +93,43 @@ class V0Evaluator(BaseEvaluator):
 
     def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, color):
         is_endgame = board.fullmove_number > 60
-        row = square // 8
-        column = square % 8
         # Pawn and piece position
         if piece_type == PAWN:
-            # Bonus on advanced pieces
-            if column in self.centeral_columns or is_endgame: # Central in middlegame, all in endgame
-                if color == BLACK:
-                    row = (7-row)
-                return self.pawn_advance_coefficient * row
+            # TODO implement endgame evaluation
+            if color == BLACK:
+                row = square // 8
+                column = square % 8
+                square = 8*(7-row) + column
+            return PAWN_POSITION_EVALUATION[square]
+            # # Bonus on advanced pieces
+            # if column in CENTRAL_COLUMNS or is_endgame: # Central in middlegame, all in endgame
+            #     if color == BLACK:
+            #         row = (7-row)
+            #     return self.pawn_advance_coefficient * row
 
-        row_center_distance = row - 3.5 if row > 3.5 else 3.5 - row # Faster than abs()
-        column_center_distance = column - 3.5 if column > 3.5 else 3.5 - column # Faster than abs()
         if piece_type in (KNIGHT, BISHOP):
             # Bonus on centralized pieces (in extended center)
-            if row < 2 or row > 5 or column < 2 or row > 5:
-                piece_center_distance = row_center_distance + column_center_distance
-                return -self.piece_centralized_coefficient * piece_center_distance
+            return PIECE_POSITION_EVALUATION[square]
         if piece_type == ROOK:
             # Move to center columns but avoid center rows
-            return self.rook_active_coefficient * (row_center_distance - column_center_distance)
+            return ROOK_POSITION_EVALUATION[square]
         if piece_type == KING:
             # King position
             sign = 1
-            king_center_distance = row_center_distance + column_center_distance  # TODO what distance works best
+            # TODO what distance works best
             if is_endgame:  # TODO better condition
                 # Centralized king is good in endgame
                 sign *= -1
-            return self.king_coefficient * sign * king_center_distance  # TODO find coefficient
+            return sign * KING_POSITION_EVALUATION[square]  # TODO find coefficient
+
         if piece_type == QUEEN:
             if not is_endgame:
                 if color == BLACK:
-                    row = (7 - row)
-                row_second_rank_distance = abs(1 - row)
-                return self.queen_coefficient * (column_center_distance + row_second_rank_distance)
-
-        return 0.
+                    row = square // 8
+                    column = square % 8
+                    square = 8 * (7 - row) + column
+                return QUEEN_POSITION_EVALUATION[square]
+            return 0.
 
     def _evaluate_checks(self, board: ExtendedBoard) -> float:
         turn_sign = -1 if board.turn else 1

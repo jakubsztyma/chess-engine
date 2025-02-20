@@ -1,13 +1,22 @@
 from contextlib import contextmanager
 
-from chess import Board, Move, scan_reversed, BB_SQUARES, PAWN, square_file
+from chess import Board, Move, scan_reversed, BB_SQUARES, PAWN, square_file, ROOK
+
+CASTLING_ROOK_MOVES = {
+    (4, 6): (7, 5),
+    (4, 2): (0, 3),
+    (60, 62): (63,61),
+    (60, 58): (56,59),
+}
 
 class ExtendedBoard(Board):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pieces_map = {}
         for square in scan_reversed(self.occupied):
-            self._assign_piece(square)
+            piece_type_at = self.piece_type_at(square)
+            if piece_type_at:
+                self.pieces_map[square] = piece_type_at
 
 
     @contextmanager
@@ -18,10 +27,9 @@ class ExtendedBoard(Board):
             self.pop()
 
     def is_castling(self, move: Move) -> bool:
-        if move.from_square in (4, 60):
-            if self.kings & BB_SQUARES[move.from_square]:
-                column_diff = (move.from_square - move.to_square) & 7
-                return column_diff < -1 or 1 < column_diff
+        if self.kings & BB_SQUARES[move.from_square]:
+            column_diff = (move.from_square & 7) - (move.to_square & 7)
+            return column_diff < -1 or 1 < column_diff
         return False
 
     def push(self, move: Move):
@@ -29,57 +37,44 @@ class ExtendedBoard(Board):
         is_castling = self.is_castling(move)
         super().push(move)
 
-        if is_castling:
-            # TODO optimize
-            self._assign_piece(0)
-            self._assign_piece(3)
-            self._assign_piece(5)
-            self._assign_piece(7)
-            self._assign_piece(56)
-            self._assign_piece(59)
-            self._assign_piece(61)
-            self._assign_piece(63)
+        if move.from_square != 0 or move.to_square != 0: # Not null
+            if is_castling:
+                rook_from, rook_to = CASTLING_ROOK_MOVES[(move.from_square, move.to_square)]
+                del self.pieces_map[rook_from]
+                self.pieces_map[rook_to] = ROOK
 
-        if is_en_passant:
-            # En passant
-            column = move.to_square % 8
-            row = move.from_square // 8
-            del self.pieces_map[8 * row + column]
+            if is_en_passant:
+                # En passant
+                column = move.to_square % 8
+                row = move.from_square // 8
+                del self.pieces_map[8 * row + column]
 
-        piece = self.pieces_map.pop(move.from_square)
-        self.pieces_map[move.to_square] = piece
+            piece = self.pieces_map.pop(move.from_square)
+            self.pieces_map[move.to_square] = piece
 
 
     def pop(self):
         move = super().pop()
-        piece_type = self.pieces_map.pop(move.to_square)
-        self.pieces_map[move.from_square] = piece_type
-        self._assign_piece(move.to_square)
 
-        if  self.is_en_passant(move):
-            # En passant
-            column = move.to_square % 8
-            row = move.from_square // 8
-            capture_square = 8 * row + column
-            self._assign_piece(capture_square)
-        elif self.is_castling(move):
-            # TODO optimize
-            self._assign_piece(0)
-            self._assign_piece(3)
-            self._assign_piece(5)
-            self._assign_piece(7)
-            self._assign_piece(56)
-            self._assign_piece(59)
-            self._assign_piece(61)
-            self._assign_piece(63)
+        if move.from_square != 0 or move.to_square != 0: # Not null
+            piece_type = self.pieces_map.pop(move.to_square)
+            self.pieces_map[move.from_square] = piece_type
+            # Assign piece to to_square if it was a capture
+            piece_type_at = self.piece_type_at(move.to_square)
+            if piece_type_at:
+                self.pieces_map[move.to_square] = piece_type_at
+
+            if  self.is_en_passant(move):
+                # En passant
+                column = move.to_square % 8
+                row = move.from_square // 8
+                capture_square = 8 * row + column
+                self.pieces_map[capture_square] = self.piece_type_at(capture_square)
+            elif self.is_castling(move):
+                rook_from, rook_to = CASTLING_ROOK_MOVES[(move.from_square, move.to_square)]
+                del self.pieces_map[rook_to]
+                self.pieces_map[rook_from] = ROOK
         return move
-
-    def _assign_piece(self, square: int):
-        piece_type_at = self.piece_type_at(square)
-        if piece_type_at:
-            self.pieces_map[square] = piece_type_at
-        else:
-            self.pieces_map.pop(square,  None)
 
     def check_game_over(self) -> int | None:
         """Faster version of board.is_game_over"""

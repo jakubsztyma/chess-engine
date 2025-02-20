@@ -5,7 +5,7 @@ import math
 from engine.base import BaseEngine, ExpectedTimeoutException
 from engine.board import ExtendedBoard
 from engine.evaluators import V0Evaluator, MATE_EVALUATION
-from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, Outcome, Termination
+from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, Outcome, Termination, Move
 from chess.engine import PlayResult, Limit
 
 PIECE_ORDER = {
@@ -66,6 +66,14 @@ class BasiliskEngine(BaseEngine):
             try:
                 for i, move_item in enumerate(move_evaluation_map):
                     move = move_item[1]
+                    # if depth >= 4:
+                    #     # Null move pruning
+                    #     with self.board.apply(move):
+                    #         with self.board.apply(Move.null()):
+                    #             _, evaluation = self.find_move(max_depth=depth - 2, master_alpha=alpha, master_beta=beta)
+                    #             if (is_white and evaluation < best_result) or (not is_white and evaluation > best_result):
+                    #                 move_evaluation_map[i][0] = anti_optimum
+                    #                 continue
                     with self.board.apply(move):
                         line, evaluation = self.find_move(max_depth=depth - 1, master_alpha=alpha, master_beta=beta)
                         move_item[0] = evaluation
