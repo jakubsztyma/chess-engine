@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from chess import Board, Move
+from chess import Board, Move, BB_SQUARES
 
 class ExtendedBoard(Board):
     @contextmanager
@@ -28,3 +28,9 @@ class ExtendedBoard(Board):
             return 0
 
         return None
+
+    def is_castling(self, move: Move) -> bool:
+        if self.kings & BB_SQUARES[move.from_square]:
+            column_diff = (move.from_square & 7) - (move.to_square & 7)
+            return column_diff < -1 or 1 < column_diff
+        return False

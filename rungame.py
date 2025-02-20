@@ -16,7 +16,7 @@ from engine.base import RandomEngine
 from engine.basilisk import BasiliskEngine
 from engine.board import ExtendedBoard
 from engine.minmax import MinMaxEngine
-from engine.evaluators import BasicMaterialEvaluator, V0Evaluator
+from engine.evaluators import BasicMaterialEvaluator, V0Evaluator, V1Evaluator
 
 
 @dataclass
@@ -80,7 +80,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V0Evaluator()), AlphaBetaEngine(V0Evaluator())).play()
+    return Game(BasiliskEngine(V1Evaluator()), AlphaBetaEngine(V0Evaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
