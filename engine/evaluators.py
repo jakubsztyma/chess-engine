@@ -49,6 +49,10 @@ PAWN_POSITION_EVALUATION = tuple(
     PAWN_ADVANCE_COEFFICIENT * row if column in CENTRAL_COLUMNS else 0
     for row in range(8) for column in range(8)
 )
+PAWN_POSITION_ENDGAME_EVALUATION = tuple(
+    PAWN_ADVANCE_COEFFICIENT * row
+    for row in range(8) for column in range(8)
+)
 PIECE_POSITION_EVALUATION = tuple(
     PIECE_CENTRALIZED_COEFFICIENT * (abs(3.5 - row) + abs(3.5 - column)) if row < 2 or row > 5 or column < 2 or row > 5 else 0
     for row in range(8) for column in range(8)
@@ -91,21 +95,17 @@ class V0Evaluator(BaseEvaluator):
         evaluation += self._evaluate_checks(board)
         return evaluation
 
-    def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, color):
+    def _evaluate_piece_position(self, board: ExtendedBoard, piece_type, square, is_white):
         is_endgame = board.fullmove_number > 60
         # Pawn and piece position
         if piece_type == PAWN:
             # TODO implement endgame evaluation
-            if color == BLACK:
+            if not is_white:
                 row = square // 8
-                column = square % 8
-                square = 8*(7-row) + column
+                square = 8*(7-row) + square % 8
+            if is_endgame:
+                return PAWN_POSITION_ENDGAME_EVALUATION[square]
             return PAWN_POSITION_EVALUATION[square]
-            # # Bonus on advanced pieces
-            # if column in CENTRAL_COLUMNS or is_endgame: # Central in middlegame, all in endgame
-            #     if color == BLACK:
-            #         row = (7-row)
-            #     return self.pawn_advance_coefficient * row
 
         if piece_type in (KNIGHT, BISHOP):
             # Bonus on centralized pieces (in extended center)
@@ -124,10 +124,9 @@ class V0Evaluator(BaseEvaluator):
 
         if piece_type == QUEEN:
             if not is_endgame:
-                if color == BLACK:
+                if not is_white:
                     row = square // 8
-                    column = square % 8
-                    square = 8 * (7 - row) + column
+                    square = 8 * (7 - row) + square % 8
                 return QUEEN_POSITION_EVALUATION[square]
             return 0.
 
@@ -140,13 +139,14 @@ class V0Evaluator(BaseEvaluator):
 
     def _evaluate_material(self, board: ExtendedBoard) -> float:
         white_material = black_material = 0
+        occupied_by_white = board.occupied_co[WHITE]
         # Calculate material
         for square, piece_type in board.pieces_map.items():
-            color = bool(board.occupied_co[WHITE] & BB_SQUARES[square])
+            is_white = occupied_by_white & BB_SQUARES[square] > 0
 
-            piece_position = self._evaluate_piece_position(board, piece_type, square, color)
+            piece_position = self._evaluate_piece_position(board, piece_type, square, is_white)
             piece_value = self.VALUE_DICT[piece_type] + piece_position
-            if color == WHITE:
+            if is_white:
                 white_material += piece_value
             else:
                 black_material += piece_value
@@ -171,7 +171,7 @@ class V0Evaluator(BaseEvaluator):
 
         # Bonus for simplification
         material_difference = white_material - black_material
-        if material_difference > 1.95 or material_difference < -1.95:
+        if material_difference < -1.95 or 1.95 < material_difference:
             percentage_left = (white_material + black_material) / 78.
             if white_material > black_material:
                 material_difference += percentage_left

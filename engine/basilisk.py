@@ -57,7 +57,7 @@ class BasiliskEngine(BaseEngine):
         best_result = anti_optimum
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves()]
-        min_depth = 2 if is_top_level else max_depth
+        min_depth = 1 if is_top_level else max_depth
         for depth in range(min_depth, max_depth + 1):
             alpha = master_alpha
             beta = master_beta
