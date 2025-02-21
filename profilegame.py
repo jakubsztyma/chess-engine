@@ -2,7 +2,7 @@ import cProfile
 import pstats
 
 from engine.basilisk import BasiliskEngine
-from engine.evaluators import V0Evaluator
+from engine.evaluators import V0Evaluator, V1Evaluator
 from rungame import Game
 
 # evaluate_material = 9.675
@@ -16,7 +16,7 @@ from rungame import play_game
 
 if __name__ == '__main__':
     with cProfile.Profile() as pr:
-        Game(BasiliskEngine(V0Evaluator()), BasiliskEngine(V0Evaluator())).play(time_limit=1., move_limit=10)
+        Game(BasiliskEngine(V1Evaluator()), BasiliskEngine(V1Evaluator())).play(time_limit=1., move_limit=10)
 
         ps = pstats.Stats(pr).sort_stats(pstats.SortKey.CUMULATIVE)
         ps.print_stats()

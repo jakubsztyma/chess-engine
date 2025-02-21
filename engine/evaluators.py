@@ -164,19 +164,19 @@ KING_COEFFICIENT = 0.01
 QUEEN_COEFFICIENT = 0.03
 CENTRAL_COLUMNS = (3, 4)
 PAWN_POSITION_EVALUATION = tuple(
-    PAWN_ADVANCE_COEFFICIENT * row if column in CENTRAL_COLUMNS else 0
+    1 + (PAWN_ADVANCE_COEFFICIENT * row if column in CENTRAL_COLUMNS else 0)
     for row in range(8) for column in range(8)
 )
 PAWN_POSITION_ENDGAME_EVALUATION = tuple(
-    PAWN_ADVANCE_COEFFICIENT * row
+    1 + PAWN_ADVANCE_COEFFICIENT * row
     for row in range(8) for column in range(8)
 )
 PIECE_POSITION_EVALUATION = tuple(
-    PIECE_CENTRALIZED_COEFFICIENT * (abs(3.5 - row) + abs(3.5 - column)) if row < 2 or row > 5 or column < 2 or row > 5 else 0
+    3 + (PIECE_CENTRALIZED_COEFFICIENT * (abs(3.5 - row) + abs(3.5 - column)) if row < 2 or row > 5 or column < 2 or row > 5 else 0)
     for row in range(8) for column in range(8)
 )
 ROOK_POSITION_EVALUATION = tuple(
-    ROOK_ACTIVE_COEFFICIENT * (abs(3.5 - row) - abs(3.5 - column))
+    5 + ROOK_ACTIVE_COEFFICIENT * (abs(3.5 - row) - abs(3.5 - column))
     for row in range(8) for column in range(8)
 )
 KING_POSITION_EVALUATION = tuple(
@@ -184,7 +184,7 @@ KING_POSITION_EVALUATION = tuple(
     for row in range(8) for column in range(8)
 )
 QUEEN_POSITION_EVALUATION = tuple(
-    QUEEN_COEFFICIENT * (abs(1 - row) + abs(3.5 - column))
+    9 + QUEEN_COEFFICIENT * (abs(1 - row) + abs(3.5 - column))
     for row in range(8) for column in range(8)
 )
 
@@ -213,41 +213,6 @@ class V1Evaluator(BaseEvaluator):
         evaluation += self._evaluate_checks(board)
         return evaluation
 
-    def _evaluate_piece_position(self, board: Board, piece_type, square, is_white):
-        is_endgame = board.fullmove_number > 60
-        # Pawn and piece position
-        if piece_type == PAWN:
-            # TODO implement endgame evaluation
-            if not is_white:
-                row = square // 8
-                square = 8*(7-row) + square % 8
-            if is_endgame:
-                return PAWN_POSITION_ENDGAME_EVALUATION[square]
-            return PAWN_POSITION_EVALUATION[square]
-
-        if piece_type in (KNIGHT, BISHOP):
-            # Bonus on centralized pieces (in extended center)
-            return PIECE_POSITION_EVALUATION[square]
-        if piece_type == ROOK:
-            # Move to center columns but avoid center rows
-            return ROOK_POSITION_EVALUATION[square]
-        if piece_type == KING:
-            # King position
-            sign = 1
-            # TODO what distance works best
-            if is_endgame:  # TODO better condition
-                # Centralized king is good in endgame
-                sign *= -1
-            return sign * KING_POSITION_EVALUATION[square]  # TODO find coefficient
-
-        if piece_type == QUEEN:
-            if not is_endgame:
-                if not is_white:
-                    row = square // 8
-                    square = 8 * (7 - row) + square % 8
-                return QUEEN_POSITION_EVALUATION[square]
-            return 0.
-
     def _evaluate_checks(self, board: Board) -> float:
         turn_sign = -1 if board.turn else 1
         if board.is_check():
@@ -258,25 +223,42 @@ class V1Evaluator(BaseEvaluator):
     def _evaluate_material(self, board: Board) -> float:
         white_material = black_material = 0
         occupied_by_white = board.occupied_co[WHITE]
+        is_endgame = board.fullmove_number > 60
         # Calculate material
         for square in scan_reversed(board.occupied):
             mask = BB_SQUARES[square]
-            if board.pawns & mask:
-                piece_type = PAWN
-            elif board.knights & mask:
-                piece_type = KNIGHT
-            elif board.bishops & mask:
-                piece_type = BISHOP
-            elif board.rooks & mask:
-                piece_type = ROOK
-            elif board.queens & mask:
-                piece_type = QUEEN
-            else:
-                piece_type = KING
             is_white = occupied_by_white & mask > 0
+            if board.pawns & mask:
+                # TODO implement endgame evaluation
+                if not is_white:
+                    row = square // 8
+                    square = 8 * (7 - row) + square % 8
+                if is_endgame:
+                    piece_value = PAWN_POSITION_ENDGAME_EVALUATION[square]
+                else:
+                    piece_value = PAWN_POSITION_EVALUATION[square]
+            elif board.knights & mask:
+                piece_value = PIECE_POSITION_EVALUATION[square]
+            elif board.bishops & mask:
+                piece_value = PIECE_POSITION_EVALUATION[square]
+            elif board.rooks & mask:
+                piece_value = ROOK_POSITION_EVALUATION[square]
+            elif board.kings & mask:
+                sign = 1
+                # TODO what distance works best
+                if is_endgame:  # TODO better condition
+                    # Centralized king is good in endgame
+                    sign *= -1
+                piece_value = sign * KING_POSITION_EVALUATION[square]  # TODO find coefficient
+            else:
+                if not is_endgame:
+                    if not is_white:
+                        row = square // 8
+                        square = 8 * (7 - row) + square % 8
+                    piece_value = QUEEN_POSITION_EVALUATION[square]
+                else:
+                    piece_value = 9.
 
-            piece_position = self._evaluate_piece_position(board, piece_type, square, is_white)
-            piece_value = self.VALUE_DICT[piece_type] + piece_position
             if is_white:
                 white_material += piece_value
             else:

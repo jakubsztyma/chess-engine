@@ -80,7 +80,7 @@ class Game:
         return GameResult(result, board.fullmove_number, elapsed, visited_nodes, depth_sum)
 
 def play_game():
-    return Game(BasiliskEngine(V1Evaluator()), AlphaBetaEngine(V0Evaluator())).play()
+    return Game(BasiliskEngine(V1Evaluator()), ABDeppeningEngine(V0Evaluator())).play()
 
 if __name__ == '__main__':
     # Provide the path to the Stockfish engine
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
     # Best against AlphaBeta (time 0.3): Match result: 98.5 : 1.5, Elapsed: 2341.0207023620605. Fullmoves: 4082. Time per move: 0.5734984572175552. Nodes per move: 14125.004654581087. Average depth: 4.751347378735914.
+    # Best against ABD (time 0.3):
 
 
     print(
