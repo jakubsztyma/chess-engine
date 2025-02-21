@@ -5,11 +5,11 @@ from engine.basilisk import BasiliskEngine
 from engine.evaluators import V0Evaluator
 from rungame import Game
 
-# evaluate_material = 7.446
+# evaluate_material = 9.675
 # _evaluate_piece_position = 1.441
-# get_legal_moves = 6.396
+# get_legal_moves = 4.860
 # push=  2.699 -2.322
-# is_castling = 0.364
+# is_castling = 0.175
 # pop = 0.928 - 0.405
 
 from rungame import play_game

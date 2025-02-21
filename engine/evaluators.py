@@ -1,7 +1,8 @@
 import abc
 import random
 
-from chess import Board, PAWN,KNIGHT,BISHOP,ROOK,QUEEN,KING,SQUARES_180,BB_SQUARES,WHITE,BLACK, lsb
+from chess import Board, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, SQUARES_180, BB_SQUARES, WHITE, BLACK, lsb, \
+    scan_reversed
 
 MATE_EVALUATION = 1000
 
@@ -45,6 +46,7 @@ class V0Evaluator(BaseEvaluator):
         ROOK: 5,
         QUEEN: 9,
         KING: 0,
+        None: 0,
     }
     def evaluate(self, board: Board) -> float:
         # TODO check for checkmate in an efficient way
@@ -155,7 +157,7 @@ class V0Evaluator(BaseEvaluator):
         return material_difference + offset
 
 
-PAWN_ADVANCE_COEFFICIENT = 0.03
+PAWN_ADVANCE_COEFFICIENT = 0.05
 PIECE_CENTRALIZED_COEFFICIENT = -0.015
 ROOK_ACTIVE_COEFFICIENT = 0.02
 KING_COEFFICIENT = 0.01
@@ -257,17 +259,28 @@ class V1Evaluator(BaseEvaluator):
         white_material = black_material = 0
         occupied_by_white = board.occupied_co[WHITE]
         # Calculate material
-        for square in SQUARES_180:
-            piece_type = board.piece_type_at(square)
-            if piece_type:
-                is_white = occupied_by_white & BB_SQUARES[square] > 0
+        for square in scan_reversed(board.occupied):
+            mask = BB_SQUARES[square]
+            if board.pawns & mask:
+                piece_type = PAWN
+            elif board.knights & mask:
+                piece_type = KNIGHT
+            elif board.bishops & mask:
+                piece_type = BISHOP
+            elif board.rooks & mask:
+                piece_type = ROOK
+            elif board.queens & mask:
+                piece_type = QUEEN
+            else:
+                piece_type = KING
+            is_white = occupied_by_white & mask > 0
 
-                piece_position = self._evaluate_piece_position(board, piece_type, square, is_white)
-                piece_value = self.VALUE_DICT[piece_type] + piece_position
-                if is_white:
-                    white_material += piece_value
-                else:
-                    black_material += piece_value
+            piece_position = self._evaluate_piece_position(board, piece_type, square, is_white)
+            piece_value = self.VALUE_DICT[piece_type] + piece_position
+            if is_white:
+                white_material += piece_value
+            else:
+                black_material += piece_value
 
         # Bonus to winning advantage in endgame
         worse_material = white_material if white_material < black_material else black_material
@@ -287,13 +300,12 @@ class V1Evaluator(BaseEvaluator):
                     cutoff_result = - cutoff_result
                 return cutoff_result
 
-        # Bonus for simplification
+        # Bonus for simplification if black is not winning a log
         material_difference = white_material - black_material
-        if material_difference < -1.95 or 1.95 < material_difference:
-            percentage_left = (white_material + black_material) / 78.
-            if white_material > black_material:
-                material_difference += percentage_left
-            else:
-                material_difference -= percentage_left
+        percentage_left = (white_material + black_material) / 78.
+        offset = 1. - percentage_left
+        if abs(material_difference) > 1.95:
+            if black_material > white_material:
+                offset = -offset
 
-        return material_difference
+        return material_difference + offset

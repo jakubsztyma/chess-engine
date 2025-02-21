@@ -105,12 +105,13 @@ class BasiliskEngine(BaseEngine):
         else:
             piece_order = PIECE_ORDER
 
-        evaluated_moves = []
-        for i, move in enumerate(self.board.legal_moves):
+        evaluated_moves = [[None, move] for move in self.board.legal_moves]
+        for i, move_item in enumerate(evaluated_moves):
+            move = move_item[1]
+            capture_value = V0Evaluator.VALUE_DICT[self.board.piece_type_at(move.to_square)]
             is_castling = self.board.is_castling(move)
-            capture_value = V0Evaluator.VALUE_DICT.get(self.board.piece_type_at(move.to_square), 0)
-            piece_order_value = piece_order.get(self.board.piece_type_at(move.from_square))
-            evaluated_moves.append((is_castling, capture_value, piece_order_value, -i, move))
+            piece_order_value = piece_order[self.board.piece_type_at(move.from_square)]
+            move_item[0] = capture_value + 3 * int(is_castling) + 0.25 * piece_order_value -0.1111 * i # TODO match weights
 
 
         evaluated_moves.sort(reverse=True)
