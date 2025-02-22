@@ -31,7 +31,7 @@ class BasiliskEngine(BaseEngine):
         self.time = limit.time
         self.board = board
         best_line, best_result = self.find_move(self.max_depth, master_alpha=-math.inf, master_beta=math.inf, is_top_level=True)
-        return PlayResult(best_line[-1], None)
+        return PlayResult(best_line[0], None)
 
 
     def _play(self, *args, **kwargs):
@@ -42,6 +42,8 @@ class BasiliskEngine(BaseEngine):
     def find_move(self, max_depth: int, master_alpha: float, master_beta: float, is_top_level=False):
         self.visited_nodes += 1
         is_white = self.board.turn
+        sign = 1 if is_white else -1
+        optimum = math.inf if is_white else -math.inf
         anti_optimum = -math.inf if is_white else math.inf
         self.check_timeout()
 
@@ -57,7 +59,7 @@ class BasiliskEngine(BaseEngine):
         best_result = anti_optimum
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves()]
-        min_depth = 2 if is_top_level else max_depth
+        min_depth = 2 if (is_top_level or max_depth >= 4) else max_depth
         for depth in range(min_depth, max_depth + 1):
             alpha = master_alpha
             beta = master_beta
@@ -73,22 +75,23 @@ class BasiliskEngine(BaseEngine):
                         if is_white:
                             if evaluation > best_result:
                                 best_result = evaluation
-                                line.append(move)
-                                best_line = line
+                                best_line = [move] + line
                             alpha = max(alpha, evaluation)
                         else:
                             if evaluation < best_result:
                                 best_result = evaluation
-                                line.append(move)
-                                best_line = line
+                                best_line = [move] + line
                             beta = min(beta, evaluation)
 
                     if beta <= alpha:
                         if depth == max_depth:
                             return best_line, best_result
                         else:
+                            move_evaluation_map[i][0] = optimum # Killer heuristic
                             for j in range(i+1, len(move_evaluation_map)):
-                                move_evaluation_map[j][0] = anti_optimum
+                                # Lower depth evaluation penalty
+                                move_evaluation_map[j][0] -= sign * 1000
+                            break
             except ExpectedTimeoutException as ex:
                 if is_top_level:
                     self.achieved_depths.append(depth)

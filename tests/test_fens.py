@@ -18,12 +18,12 @@ from engine.evaluators import V0Evaluator
     # Mate in 5
     ("5k2/2N2p2/2B2P2/5q2/2b5/2P1KP2/1P4rP/R2Q3R b - - 0 29", "f5e5"),
     # Material simplification
-    ("6K1/8/k7/8/3Q4/2n5/P7/1r3R2 w - - 2 96", ("d4c3", "f1b1", "d4b3")),
+    ("6K1/8/k7/8/3Q4/2n5/P7/1r3R2 w - - 2 96", ("d4c3", "f1b1", "d4d3")),
     # Endgame simplification
     ("7r/4P3/1pn5/p1p2kB1/8/2P3K1/PPP5/4R3 w - - 2 34", ("e7e8q", "e7e8r", "e7e8b", "e7e8n")),
     ("r1b5/pp1p4/5P2/2p5/5kPr/1P6/PRPP1P1P/4R1K1 w - - 1 28", ("f6f7",)),
     # Defend against mate
-    ("r5k1/p4ppr/2n5/1N4p1/4P3/3PQPPb/PqP4P/R3R1K1 w - - 0 25", ("a1b1", "a2a4", "b5c7", "b5d6")),
+    ("r5k1/p4ppr/2n5/1N4p1/4P3/3PQPPb/PqP4P/R3R1K1 w - - 0 25", ("a1b1", "a2a4", "b5c7", "b5d6")), # Much too shallow
     # Tactical
     ("r1b1kb1r/3ppqpp/np6/1B2B3/P2PN3/1Q2P2P/8/2R1K1R1 w q - 0 27", ("c1c8", "b5c4", "b3f7")),
 

@@ -231,8 +231,7 @@ class V1Evaluator(BaseEvaluator):
             if board.pawns & mask:
                 # TODO implement endgame evaluation
                 if not is_white:
-                    row = square // 8
-                    square = 8 * (7 - row) + square % 8
+                    square = square ^ 0x38
                 if is_endgame:
                     piece_value = PAWN_POSITION_ENDGAME_EVALUATION[square]
                 else:
@@ -253,8 +252,7 @@ class V1Evaluator(BaseEvaluator):
             else:
                 if not is_endgame:
                     if not is_white:
-                        row = square // 8
-                        square = 8 * (7 - row) + square % 8
+                        square = square ^ 0x38
                     piece_value = QUEEN_POSITION_EVALUATION[square]
                 else:
                     piece_value = 9.
