@@ -18,6 +18,19 @@ from engine.board import ExtendedBoard
 from engine.minmax import MinMaxEngine
 from engine.evaluators import BasicMaterialEvaluator, V0Evaluator, V1Evaluator
 
+start_fens = {
+    "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+    "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+    "rnbqkbnr/ppp2ppp/8/3pp3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq d6 0 3",
+    "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2",
+    "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
+    "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+    "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2",
+    "rnbqkbnr/pppppp1p/6p1/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2",
+    "rnbqkbnr/pppp1ppp/8/4p3/2P5/8/PP1PPPPP/RNBQKBNR w KQkq e6 0 2",
+    "rnbqkbnr/pppp1ppp/8/4p3/8/5N2/PPPPPPPP/RNBQKB1R w KQkq e6 0 2",
+    "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+}
 
 @dataclass
 class GameResult:
@@ -40,7 +53,8 @@ class Game:
         game.headers["Black"] = str(self.black)
         node = game
 
-        board = ExtendedBoard()
+        starting_position = random.choice(list(start_fens))
+        board = ExtendedBoard(starting_position)
 
         start = time.time()
         while board.result() == "*":
@@ -64,7 +78,7 @@ class Game:
         self.white.quit()
         self.black.quit()
 
-        print(game) # PGN
+        # print(game) # PGN # TODO restore?
 
         elapsed = time.time() - start
         match board.result():
@@ -107,9 +121,9 @@ if __name__ == '__main__':
     visited_nodes = sum(gr.visited_nodes for gr in game_results)
     depth_sum = sum(gr.depth_sum for gr in game_results)
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
-    # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
+    # Best against MinMax (time 0.2): Match result: 99.5 : 0.5, Elapsed: 988.6049735546112. Fullmoves: 1754. Time per move: 0.5636288332694477. Nodes per move: 8836.092930444698. Average depth: 5.34036488027366.
     # Best against AlphaBeta (time 0.3): Match result: 98.5 : 1.5, Elapsed: 2341.0207023620605. Fullmoves: 4082. Time per move: 0.5734984572175552. Nodes per move: 14125.004654581087. Average depth: 4.751347378735914.
-    # Best against ABD (time 0.3): Match result: 88.5 : 11.5, Elapsed: 3017.647027492523. Fullmoves: 5253. Time per move: 0.5744616462007468. Nodes per move: 8027.483913953931. Average depth: 5.3759756329716355.
+    # Best against ABD (time 0.3): Match result: 74.5 : 25.5, Elapsed: 3757.678389310837. Fullmoves: 6672. Time per move: 0.5632011974386746. Nodes per move: 10143.320443645083. Average depth: 5.511540767386091.
 
 
     print(

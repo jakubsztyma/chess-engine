@@ -206,25 +206,34 @@ class V1Evaluator(BaseEvaluator):
 
     def _evaluate_position(self, board: Board) -> float:
         evaluation = 0.
-        evaluation += self._evaluate_checks(board)
-        # 1-move evaluation
-        # TODO evaluate promotions
-        # Max capture
-        # TODO generate only capture to optimize
-        captures_generator = (self.VALUE_DICT[board.piece_type_at(move.to_square)] for move in board.legal_moves)
-        max_capture = max(captures_generator, default=0.)
-        coefficient = 0.7 if board.turn else -0.7
-        return evaluation + coefficient * max_capture
+        legal_moves = list(board.generate_almost_legal_fast())
 
-    def _evaluate_checks(self, board: Board) -> float:
-        # TODO check checkmate before pushing the move?
-        turn_sign = -1 if board.turn else 1
         if board.is_check():
+            turn_sign = -1 if board.turn else 1
             # Being in check makes evaluation worse
-            if board.is_checkmate():
-                return turn_sign * MATE_EVALUATION
-            return turn_sign * 0.2
-        return 0.
+            if len(legal_moves) == 0:
+                # TODO check checkmate before pushing the move?
+                evaluation += turn_sign * MATE_EVALUATION
+            else:
+                evaluation += turn_sign * 0.2
+
+        # 1-move evaluation
+        # Max capture
+        # TODO generate only captures and promotions to optimize
+        max_move_evaluation_delta = 0.
+        for move in legal_moves:
+            move_eval_delta = self.VALUE_DICT[board.piece_type_at(move.to_square)]
+
+            is_last_row = move.to_square >= 56 if board.turn else move.to_square <= 7
+            if is_last_row and board.piece_type_at(move.from_square) == PAWN: # Is promotion
+                move_eval_delta += 8. # 9 - 1
+
+            if move_eval_delta > max_move_evaluation_delta:
+                max_move_evaluation_delta = move_eval_delta
+
+        coefficient = 0.7 if board.turn else -0.7
+        return evaluation + coefficient * max_move_evaluation_delta
+
 
     def _evaluate_material(self, board: Board) -> float:
         white_material = black_material = 0
