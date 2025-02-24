@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # Best against random: Match result: 25 : 0, Elapsed: 115.12515902519226. Fullmoves: 605. Time per move: 0.19028951904990457
     # Best against MinMax (time 0.2): Match result: 24.5 : 0.5, Elapsed: 369.31914925575256. Fullmoves: 984. Time per move: 0.3753243386745453
     # Best against AlphaBeta (time 0.3): Match result: 98.5 : 1.5, Elapsed: 2341.0207023620605. Fullmoves: 4082. Time per move: 0.5734984572175552. Nodes per move: 14125.004654581087. Average depth: 4.751347378735914.
-    # Best against ABD (time 0.3): Match result: 71.0 : 29.0, Elapsed: 3129.7855722904205. Fullmoves: 5463. Time per move: 0.5729060172598244. Nodes per move: 16826.0397217646. Average depth: 4.789676002196595.
+    # Best against ABD (time 0.3): Match result: 88.5 : 11.5, Elapsed: 3017.647027492523. Fullmoves: 5253. Time per move: 0.5744616462007468. Nodes per move: 8027.483913953931. Average depth: 5.3759756329716355.
 
 
     print(

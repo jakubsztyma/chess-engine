@@ -47,7 +47,8 @@ class BasiliskEngine(BaseEngine):
         anti_optimum = -math.inf if is_white else math.inf
         self.check_timeout()
 
-        if max_depth == 0:
+        if max_depth == 1:
+            # Evaluate at depth=1 because evaluator does process moves in depth=1
             return [], self.evaluator.evaluate(self.board)
 
         if not is_top_level:
@@ -59,7 +60,7 @@ class BasiliskEngine(BaseEngine):
         best_result = anti_optimum
 
         move_evaluation_map = [[anti_optimum, move] for move in self.get_legal_moves()]
-        min_depth = 2 if (is_top_level or max_depth >= 4) else max_depth
+        min_depth = 3 if (is_top_level or max_depth >= 4) else max_depth
         for depth in range(min_depth, max_depth + 1):
             alpha = master_alpha
             beta = master_beta

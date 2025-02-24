@@ -197,13 +197,9 @@ class V1Evaluator(BaseEvaluator):
         QUEEN: 9,
         KING: 0,
         0: 0,
+        None: 0,
     }
     def evaluate(self, board: Board) -> float:
-        # TODO check for checkmate in an efficient way
-        # if board.is_checkmate():
-        #     sign = 1 if board.turn else -1
-        #     return sign * MATE_EVALUATION
-
         evaluation = self._evaluate_material(board) + self._evaluate_position(board)
         # Add tiny random number to avoid having the same result for different positions
         return evaluation + random.uniform(0, 0.01)
@@ -211,12 +207,22 @@ class V1Evaluator(BaseEvaluator):
     def _evaluate_position(self, board: Board) -> float:
         evaluation = 0.
         evaluation += self._evaluate_checks(board)
-        return evaluation
+        # 1-move evaluation
+        # TODO evaluate promotions
+        # Max capture
+        # TODO generate only capture to optimize
+        captures_generator = (self.VALUE_DICT[board.piece_type_at(move.to_square)] for move in board.legal_moves)
+        max_capture = max(captures_generator, default=0.)
+        coefficient = 0.7 if board.turn else -0.7
+        return evaluation + coefficient * max_capture
 
     def _evaluate_checks(self, board: Board) -> float:
+        # TODO check checkmate before pushing the move?
         turn_sign = -1 if board.turn else 1
         if board.is_check():
             # Being in check makes evaluation worse
+            if board.is_checkmate():
+                return turn_sign * MATE_EVALUATION
             return turn_sign * 0.2
         return 0.
 
